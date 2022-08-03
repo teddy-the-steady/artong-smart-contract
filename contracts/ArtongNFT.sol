@@ -33,6 +33,8 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
     Policy private policy;
 
     address public marketplace;
+    uint16 public platformFee;
+    address payable public feeReceipient;
     
     /// @notice Creator Earnings made by selling tokens
     mapping (address => uint256) pendingWithdrawals;
@@ -41,6 +43,8 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         string memory _name,
         string memory _symbol,
         address _marketplace,
+        uint16 _platformFee,
+        address payable _feeReceipient,
         uint256 _maxAmount,
         Policy _policy
     )
@@ -49,6 +53,8 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
     {
         marketplace = _marketplace;
         maxAmount = _maxAmount;
+        platformFee = _platformFee;
+        feeReceipient = _feeReceipient;
         policy = _policy;
     }
 
@@ -71,13 +77,15 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         require(signer == voucher.creator, "Signature invalid");
         require(msg.value >= voucher.minPrice, "Insufficient funds to redeem");
 
-        // TODO] redeem안에 buyItem 로직도 들어가 있는데 여기서 처리하면 수수료는 어디서 수령?
-        // 수수료를 컨트랙 안에 쌓아둬?? 이게 맞는거 같은데?
-
         uint256 newTokenId = mint(voucher.creator, voucher.uri);
         _transfer(voucher.creator, redeemer, newTokenId);
 
-        pendingWithdrawals[signer] += msg.value;
+        uint256 feeAmount = msg.value * (platformFee / 100);
+
+        pendingWithdrawals[signer] += msg.value - feeAmount;
+
+        (bool success,) = feeReceipient.call{value : feeAmount}("");
+        require(success, "Transfer failed"); // TODO] 실패해도 revert 안하는 방향으로?
 
         return newTokenId;
     }
