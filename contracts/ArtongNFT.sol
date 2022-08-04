@@ -110,6 +110,17 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         return pendingWithdrawals[msg.sender];
     }
 
+    /// @notice Returns the chain id of the current blockchain.
+    /// @dev This is used to workaround an issue with ganache returning different values from the on-chain chainid() function and
+    ///  the eth_chainId RPC method. See https://github.com/protocol/nft-website/issues/121 for context.
+    function getChainID() external view returns (uint256) {
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        return id;
+    }
+
     function _calculatePlatformAmount(uint256 value) private view returns (uint256) {
         return value * (platformFee / 10000);
     }
