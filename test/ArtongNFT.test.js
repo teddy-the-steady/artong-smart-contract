@@ -4,33 +4,7 @@ const { ethers } = require("hardhat");
 const { solidity } = require('ethereum-waffle');
 chai.use(solidity);
 
-async function deploy() {
-  const [minter, redeemer, feeReciever, _] = await ethers.getSigners()
-
-  const ArtongNFT = await ethers.getContractFactory("ArtongNFT")
-  const contract = await ArtongNFT.deploy(
-    "ArtongNFT",
-    "ANFT",
-    minter.address,
-    5,
-    feeReciever.address,
-    1000,
-    1
-  );
-
-  // the redeemerContract is an instance of the contract that's wired up to the redeemer's signing key
-  const redeemerFactory = ArtongNFT.connect(redeemer)
-  const redeemerContract = redeemerFactory.attach(contract.address)
-
-  return {
-    minter,
-    redeemer,
-    contract,
-    redeemerContract,
-  }
-}
-
-describe("ArtongNFT", function() {
+describe("ArtongNFT Lazy minting", function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
   });
