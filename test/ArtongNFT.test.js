@@ -39,6 +39,17 @@ describe("ArtongNFT", function() {
   it("Should return policy", async function() {
     expect(await this.artongNft.getPolicy()).to.equal(1);
   });
+
+  it("Should fail to mint if policy is 1 or succeed", async function() {
+    if (await this.artongNft.getPolicy() === 1) {
+      await expect(this.artongNft.mint(this.deployer.address, sampleUri))
+        .to.be.revertedWith('Policy only allows lazy minting');
+    } else {
+      await expect(this.artongNft.mint(this.deployer.address, sampleUri))
+        .to.emit(this.artongNft, 'Transfer')
+        .withArgs(zeroAddress, this.deployer.address, firstTokenId);
+    }
+  });
 });
 
 describe("ArtongNFT Lazy minting", function() {
@@ -125,11 +136,11 @@ describe("ArtongNFT Lazy minting", function() {
         [price.mul(-1), price * (10000 - platformFee) / 10000, price * platformFee / 10000]
       );
 
-    expect(await this.artongNft.availableToWithdraw()).to.equal(price * (10000 - platformFee) / 10000);
+    expect(await this.artongNft.getWithdrawal()).to.equal(price * (10000 - platformFee) / 10000);
 
     await expect(await this.artongNft.withdraw())
       .to.changeEtherBalance(this.minter, price * (10000 - platformFee) / 10000)
 
-    expect(await this.artongNft.availableToWithdraw()).to.equal(0)
+    expect(await this.artongNft.getWithdrawal()).to.equal(0)
   });
 });

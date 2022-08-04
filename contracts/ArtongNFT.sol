@@ -58,15 +58,9 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         policy = _policy;
     }
 
-    // @dev Mints a token to an address with a tokenURI.
-    // @param _to address of the future owner of the token
     function mint(address _to, string calldata _tokenUri) public returns (uint256) {
-        tokenIdCounter.increment();
-        uint256 newTokenId = tokenIdCounter.current();
-        _mint(_to, newTokenId);
-        _setTokenURI(newTokenId, _tokenUri);
-
-        return newTokenId;
+        require(policy == Policy.Immediate, "Policy only allows lazy minting");
+        return _doMint(_to, _tokenUri);
     }
 
     /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
@@ -77,10 +71,10 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         require(signer == voucher.creator, "Signature invalid");
         require(msg.value >= voucher.minPrice, "Insufficient funds to redeem");
 
-        uint256 newTokenId = mint(voucher.creator, voucher.uri);
+        uint256 newTokenId = _doMint(voucher.creator, voucher.uri);
         _transfer(voucher.creator, redeemer, newTokenId);
 
-        uint256 feeAmount = _calculatePlatformAmount();
+        uint256 feeAmount = _calculatePlatformFeeAmount();
 
         pendingWithdrawals[signer] += msg.value - feeAmount;
 
@@ -90,7 +84,6 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         return newTokenId;
     }
 
-    /// @notice Transfers all pending withdrawal balance to the caller. Reverts if the caller is not an authorized minter.
     function withdraw() public {
         uint256 amount = pendingWithdrawals[msg.sender];
         require(amount != 0);
@@ -105,8 +98,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
       return policy;
     }
 
-    /// @notice Retuns the amount of Ether available to the caller to withdraw.
-    function availableToWithdraw() public view returns (uint256) {
+    function getWithdrawal() public view returns (uint256) {
         return pendingWithdrawals[msg.sender];
     }
 
@@ -121,7 +113,16 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         return id;
     }
 
-    function _calculatePlatformAmount() private view returns (uint256) {
+    function _doMint(address _to, string calldata _tokenUri) private returns (uint256) {
+        tokenIdCounter.increment();
+        uint256 newTokenId = tokenIdCounter.current();
+        _mint(_to, newTokenId);
+        _setTokenURI(newTokenId, _tokenUri);
+
+        return newTokenId;
+    }
+
+    function _calculatePlatformFeeAmount() private view returns (uint256) {
         return msg.value * platformFee / 10000;
     }
 
@@ -146,9 +147,9 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
 }
 
 // TODO
-// collaborator 설정 (AccessControl 로 함수마다 role 설정?) isApproved쪽은 설정하면 이점이 뭔지 araboza
+// collaborator 설정 (AccessControl 로 함수마다 role 설정?)
+// isApproved쪽은 설정하면 이점이 뭔지 araboza. 근데 굳이 collaborator가 있어야 할까?
 // pausable burnable 하면 어떤 장점이?? 권한도 엮여있음
 // IPFS랑 tokenURI 설정도 테스트 해봐야함
 
-// 끝판왕? 테스팅 로직. 아니면 테스트도 같이 할까? 같이 하는게 맞을듯..
 // for theGraph. 어떤 이벤트 필요한지 테스트해보고 이벤트 넣기! (이게 끝판왕)
