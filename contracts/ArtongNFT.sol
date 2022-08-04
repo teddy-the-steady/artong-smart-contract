@@ -33,7 +33,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
     Policy private policy;
 
     address public marketplace;
-    uint16 public platformFee;
+    uint16 public platformFee; // 2 decimals(525->5.25)
     address payable public feeReceipient;
     
     /// @notice Creator Earnings made by selling tokens
@@ -52,9 +52,9 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
     EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION)
     {
         marketplace = _marketplace;
-        maxAmount = _maxAmount;
         platformFee = _platformFee;
         feeReceipient = _feeReceipient;
+        maxAmount = _maxAmount;
         policy = _policy;
     }
 
@@ -80,7 +80,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         uint256 newTokenId = mint(voucher.creator, voucher.uri);
         _transfer(voucher.creator, redeemer, newTokenId);
 
-        uint256 feeAmount = msg.value * (platformFee / 100);
+        uint256 feeAmount = _calculatePlatformAmount(msg.value);
 
         pendingWithdrawals[signer] += msg.value - feeAmount;
 
@@ -92,7 +92,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
 
     /// @notice Transfers all pending withdrawal balance to the caller. Reverts if the caller is not an authorized minter.
     function withdraw() public {
-        uint amount = pendingWithdrawals[msg.sender];
+        uint256 amount = pendingWithdrawals[msg.sender];
         require(amount != 0);
         require(address(this).balance >= amount);
         
@@ -101,9 +101,17 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         receiver.transfer(amount);
     }
 
+    function getPolicy() public view returns (Policy) {
+      return policy;
+    }
+
     /// @notice Retuns the amount of Ether available to the caller to withdraw.
     function availableToWithdraw() public view returns (uint256) {
         return pendingWithdrawals[msg.sender];
+    }
+
+    function _calculatePlatformAmount(uint256 value) private view returns (uint256) {
+        return value * (platformFee / 10000);
     }
 
     /// @notice Verifies the signature for a given NFTVoucher, returning the address of the signer.
