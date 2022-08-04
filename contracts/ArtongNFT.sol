@@ -37,7 +37,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
     address payable public feeReceipient;
     
     /// @notice Creator Earnings made by selling tokens
-    mapping (address => uint256) pendingWithdrawals;
+    mapping(address => uint256) pendingWithdrawals;
 
     constructor(
         string memory _name,
@@ -80,12 +80,12 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         uint256 newTokenId = mint(voucher.creator, voucher.uri);
         _transfer(voucher.creator, redeemer, newTokenId);
 
-        uint256 feeAmount = _calculatePlatformAmount(msg.value);
+        uint256 feeAmount = _calculatePlatformAmount();
 
         pendingWithdrawals[signer] += msg.value - feeAmount;
 
         (bool success,) = feeReceipient.call{value : feeAmount}("");
-        require(success, "Transfer failed"); // TODO] 실패해도 revert 안하는 방향으로?
+        require(success, "Transfer failed"); // TODO] 실패해도 revert 안하는 방향으로? reentrancy attack safe?
 
         return newTokenId;
     }
@@ -111,7 +111,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
     }
 
     /// @notice Returns the chain id of the current blockchain.
-    /// @dev This is used to workaround an issue with ganache returning different values from the on-chain chainid() function and
+    /// @dev This is TEMPORARILY used to workaround an issue with ganache returning different values from the on-chain chainid() function and
     ///  the eth_chainId RPC method. See https://github.com/protocol/nft-website/issues/121 for context.
     function getChainID() external view returns (uint256) {
         uint256 id;
@@ -121,8 +121,8 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         return id;
     }
 
-    function _calculatePlatformAmount(uint256 value) private view returns (uint256) {
-        return value * (platformFee / 10000);
+    function _calculatePlatformAmount() private view returns (uint256) {
+        return msg.value * platformFee / 10000;
     }
 
     /// @notice Verifies the signature for a given NFTVoucher, returning the address of the signer.
