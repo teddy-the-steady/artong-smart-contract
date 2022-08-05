@@ -6,10 +6,11 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
+contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable, Ownable {
     using Counters for Counters.Counter;
 
     Counters.Counter private tokenIdCounter;
@@ -107,6 +108,10 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
 
     function getWithdrawal() public view returns (uint256) {
         return pendingWithdrawals[msg.sender];
+    }
+
+    function setPolicy(Policy _policy) public onlyOwner {
+        policy = _policy;
     }
 
     /// @notice Returns the chain id of the current blockchain.
