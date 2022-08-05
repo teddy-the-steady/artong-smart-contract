@@ -8,8 +8,8 @@ chai.use(solidity);
 const name = "ArtongNFT";
 const symbol = "ANFT";
 const platformFee = 500; // 5%
-let maxAmount = 2;
-let policy = 0;
+const maxAmount = 3;
+const policy = 0;
 
 const firstTokenId = 1;
 const zeroAddress = '0x0000000000000000000000000000000000000000';
@@ -90,9 +90,9 @@ describe("ArtongNFT", function() {
 
       describe("maxAmount", function() {
         context("when maximum amount is reached", function() {
-          maxAmount = 2;
-
           it("Should fail to mint", async function() {
+            await this.artongNft.mint(this.randomUser2.address, sampleUri);
+            
             await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
               .to.reverted;
           });
@@ -120,6 +120,8 @@ describe("ArtongNFT", function() {
 
         context("when paused = true", function() {
           it("Should fail to mint", async function() {
+            await this.artongNft.connect(this.marketplace).pause();
+
             await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
               .to.be.reverted;
           });
