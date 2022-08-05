@@ -39,7 +39,7 @@ describe("ArtongNFT", function() {
   });
 
   it("Should fail to mint if policy is 1 or succeed if 0", async function() {
-    if (await this.artongNft.getPolicy() === 1) {
+    if (await this.artongNft.policy() === 1) {
       await expect(this.artongNft.mint(this.deployer.address, sampleUri))
         .to.be.revertedWith('Policy only allows lazy minting');
     } else {
@@ -49,17 +49,17 @@ describe("ArtongNFT", function() {
     }
   });
 
-  it("Should whitelisted marketplace be able to pause", async function() {
+  it("Whitelisted marketplace should be able to pause", async function() {
     await expect(this.artongNft.connect(this.marketplace).pause())
       .to.emit(this.artongNft, 'Paused')
       .withArgs(this.marketplace.address);
   });
 
-  it("Should randomUser fail to pause contract", async function() {
+  it("Unauthorized user should fail to pause contract", async function() {
     await expect(this.artongNft.connect(this.randomUser).pause()).to.be.reverted;
   });
 
-  it("Should fail to call whenNotPaused functions if paused true", async function() {
+  it("WhenNotPaused functions should fail to call if paused", async function() {
     await expect(this.artongNft.connect(this.marketplace).pause())
       .to.emit(this.artongNft, 'Paused')
       .withArgs(this.marketplace.address);
@@ -68,7 +68,7 @@ describe("ArtongNFT", function() {
       .to.be.reverted;
   });
 
-  it("Should authorized adress fail to burn a token", async function() {
+  it("Unauthorized user should fail to burn a token", async function() {
     await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
       .to.emit(this.artongNft, 'Transfer')
       .withArgs(zeroAddress, this.marketplace.address, firstTokenId);
@@ -77,7 +77,7 @@ describe("ArtongNFT", function() {
       .to.be.reverted;
   });
 
-  it("Should marketplace be able to burn a token", async function() {
+  it("Marketplace should be able to burn a token", async function() {
     await expect(this.artongNft.mint(this.randomUser.address, sampleUri))
       .to.emit(this.artongNft, 'Transfer')
       .withArgs(zeroAddress, this.randomUser.address, firstTokenId);
@@ -85,6 +85,21 @@ describe("ArtongNFT", function() {
     await expect(this.artongNft.connect(this.marketplace).burn(firstTokenId))
       .to.emit(this.artongNft, 'Transfer')
       .withArgs(this.randomUser.address, zeroAddress, firstTokenId);
+  });
+
+  it("Should fail to mint if maximum amount of tokens reached", async function() {
+    await expect(this.artongNft.mint(this.randomUser.address, sampleUri))
+      .to.emit(this.artongNft, 'Transfer')
+      .withArgs(zeroAddress, this.randomUser.address, firstTokenId);
+
+    await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
+      .to.emit(this.artongNft, 'Transfer')
+      .withArgs(zeroAddress, this.marketplace.address, 2);
+    
+    if (maxAmount === 2) {
+      await expect(this.artongNft.mint(this.deployer.address, sampleUri))
+        .to.reverted;
+    }
   });
 });
 
@@ -160,7 +175,7 @@ describe("ArtongNFT Lazy minting", function() {
       .to.be.revertedWith('Insufficient funds to redeem')
   });
 
-  it("Should make payments available to minter for withdrawal and fee available for feeReceipient", async function() {
+  it("Minter should withdraw earnings and feeReceipient should recieve fee", async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
     const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
     const price = ethers.utils.parseEther('0.001');

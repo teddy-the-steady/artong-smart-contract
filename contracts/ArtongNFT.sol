@@ -13,7 +13,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
     using Counters for Counters.Counter;
 
     Counters.Counter private tokenIdCounter;
-    uint256 private maxAmount;
+    uint256 public immutable maxAmount;
     
     string private constant SIGNING_DOMAIN = "ArtongNFT-Voucher";
     string private constant SIGNATURE_VERSION = "1";
@@ -31,7 +31,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
         Immediate,
         Approved
     }
-    Policy private policy;
+    Policy public policy;
 
     address public marketplace;
     uint16 public platformFee; // 2 decimals(525->5.25)
@@ -39,6 +39,11 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
     
     /// @notice Creator Earnings made by selling tokens
     mapping(address => uint256) pendingWithdrawals;
+
+    modifier checkMaxAmount() {
+		require(maxAmount > tokenIdCounter.current(), "Maximum number of NFTs reached.");
+		_;
+	}
 
     constructor(
         string memory _name,
@@ -100,10 +105,6 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
         receiver.transfer(amount);
     }
 
-    function getPolicy() public view returns (Policy) {
-      return policy;
-    }
-
     function getWithdrawal() public view returns (uint256) {
         return pendingWithdrawals[msg.sender];
     }
@@ -160,7 +161,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
         return super._isApprovedOrOwner(spender, tokenId);
     }
 
-    function _doMint(address _to, string calldata _tokenUri) private returns (uint256) {
+    function _doMint(address _to, string calldata _tokenUri) private checkMaxAmount returns (uint256) {
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
         _mint(_to, newTokenId);
