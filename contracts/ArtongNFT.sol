@@ -5,10 +5,11 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
+contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable {
     using Counters for Counters.Counter;
 
     Counters.Counter private tokenIdCounter;
@@ -58,7 +59,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         policy = _policy;
     }
 
-    function mint(address _to, string calldata _tokenUri) public returns (uint256) {
+    function mint(address _to, string calldata _tokenUri) public whenNotPaused returns (uint256) {
         require(policy == Policy.Immediate, "Policy only allows lazy minting");
         return _doMint(_to, _tokenUri);
     }
@@ -66,7 +67,12 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
     /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
     /// @param redeemer The address of the account which will receive the NFT upon success.
     /// @param voucher A signed NFTVoucher that describes the NFT to be redeemed.
-    function redeem(address redeemer, NFTVoucher calldata voucher) public payable returns (uint256) {
+    function redeem(address redeemer, NFTVoucher calldata voucher)
+        public
+        payable
+        whenNotPaused
+        returns (uint256)
+    {
         address signer = _verify(voucher);
         require(signer == voucher.creator, "Signature invalid");
         require(msg.value >= voucher.minPrice, "Insufficient funds to redeem");
@@ -84,7 +90,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         return newTokenId;
     }
 
-    function withdraw() public {
+    function withdraw() public whenNotPaused {
         uint256 amount = pendingWithdrawals[msg.sender];
         require(amount != 0);
         require(address(this).balance >= amount);
@@ -113,6 +119,47 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
         return id;
     }
 
+    function pause() public {
+        require(isApprovedForAll(msg.sender, msg.sender), "Not authorized");
+		_pause();
+	}
+
+	function unpause() public {
+        require(isApprovedForAll(msg.sender, msg.sender), "Not authorized");
+		_unpause();
+	}
+
+    /// @notice Override isApprovedForAll to whitelist Artong contracts to enable gas-less listings.
+    function isApprovedForAll(address owner, address operator)
+        override
+        public
+        view
+        returns (bool)
+    {
+        if (marketplace == operator) {
+            return true;
+        }
+
+        return super.isApprovedForAll(owner, operator);
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+
+    /// @notice Override _isApprovedOrOwner to whitelist Artong contracts to enable gas-less listings.
+    function _isApprovedOrOwner(address spender, uint256 tokenId) override internal view returns (bool) {
+        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+        address owner = ERC721.ownerOf(tokenId);
+        if (isApprovedForAll(owner, spender)) return true;
+        return super._isApprovedOrOwner(spender, tokenId);
+    }
+
     function _doMint(address _to, string calldata _tokenUri) private returns (uint256) {
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
@@ -124,6 +171,10 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
 
     function _calculatePlatformFeeAmount() private view returns (uint256) {
         return msg.value * platformFee / 10000;
+    }
+
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+        super._burn(tokenId);
     }
 
     /// @notice Verifies the signature for a given NFTVoucher, returning the address of the signer.
@@ -147,9 +198,7 @@ contract ArtongNFT is ERC721URIStorage, EIP712, Ownable {
 }
 
 // TODO
-// collaborator 설정 (AccessControl 로 함수마다 role 설정?)
-// isApproved쪽은 설정하면 이점이 뭔지 araboza. 근데 굳이 collaborator가 있어야 할까?
-// pausable burnable 하면 어떤 장점이?? 권한도 엮여있음
+// isApproved로 마켓 whitelisting하면 진짜 gas-less 리스팅이 가능?
 // IPFS랑 tokenURI 설정도 테스트 해봐야함
 
 // for theGraph. 어떤 이벤트 필요한지 테스트해보고 이벤트 넣기! (이게 끝판왕)
