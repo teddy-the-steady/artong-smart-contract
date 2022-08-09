@@ -83,24 +83,24 @@ describe('ArtongNFT', function() {
 
         expect(await this.artongNft.policy()).to.equal(1);
       });
+    });
 
-      context('when policy is Immediate = 0', async function() {
-        it('Should succeed to mint', async function() {
-          await this.artongNft.connect(this.owner).setPolicy(0);
+    context('when policy is Immediate = 0', async function() {
+      it('Should succeed to mint', async function() {
+        await this.artongNft.connect(this.owner).setPolicy(0);
 
-          await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
-            .to.emit(this.artongNft, 'Transfer')
-            .withArgs(zeroAddress, this.randomUser1.address, firstTokenId);
-        });
+        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
+          .to.emit(this.artongNft, 'Transfer')
+          .withArgs(zeroAddress, this.randomUser1.address, firstTokenId);
       });
-  
-      context('when policy is Approved = 1', async function() {
-        it('Should fail to mint', async function() {
-          await this.artongNft.connect(this.owner).setPolicy(1);
+    });
 
-          await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
-            .to.be.revertedWith('Policy only allows lazy minting');
-        });
+    context('when policy is Approved = 1', async function() {
+      it('Should fail to mint', async function() {
+        await this.artongNft.connect(this.owner).setPolicy(1);
+
+        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
+          .to.be.revertedWith('Policy only allows lazy minting');
       });
     });
 
