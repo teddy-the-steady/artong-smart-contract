@@ -65,7 +65,7 @@ describe('ArtongNFT', function() {
           await this.artongNft.mint(this.owner.address, sampleUri);
         });
 
-        it('Should owner be able to burn and fail to query a burnt token', async function () {
+        it('Should owner be able to burn and should fail to query a burnt token', async function () {
           await expect(await this.artongNft.connect(this.owner).burn(firstTokenId))
             .to.emit(this.artongNft, 'Transfer')
             .withArgs(this.owner.address, zeroAddress, firstTokenId);
@@ -191,6 +191,20 @@ describe('ArtongNFT', function() {
         context('when querying the zero address', function () {
           it('Should throw error', async function () {
             await expect(this.artongNft.balanceOf(zeroAddress)).to.be.reverted;
+          });
+        });
+      });
+
+      describe('ownerOf', function () {
+        context('when the given token ID was tracked by this token', function () {
+          it('Should return the owner of the given token ID', async function () {
+            expect(await this.artongNft.ownerOf(firstTokenId)).to.be.equal(this.randomUser1.address)
+          })
+        })
+  
+        context('when the given token ID was not tracked by this token', function () {
+          it('Should fail to return the owner', async function () {
+            await expect(this.artongNft.ownerOf(nonExistentTokenId)).to.be.reverted;
           });
         });
       });
