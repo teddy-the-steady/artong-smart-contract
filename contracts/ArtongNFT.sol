@@ -210,7 +210,5 @@ contract ArtongNFT is
 }
 
 // TODO
-// isApproved로 마켓 whitelisting하면 진짜 gas-less 리스팅이 가능?
-// IPFS랑 tokenURI 설정도 테스트 해봐야함
-
+// IPFS랑 tokenURI 설정 테스트
 // for theGraph. 어떤 이벤트 필요한지 테스트해보고 이벤트 넣기! (이게 끝판왕)
