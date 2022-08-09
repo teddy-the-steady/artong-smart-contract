@@ -13,8 +13,11 @@ const policy = 0;
 
 const firstTokenId = 1;
 const secondTokenId = 2;
+const nonExistentTokenId = 99;
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const sampleUri = 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
+const price = ethers.utils.parseEther('0.0001');
+const newPrice = ethers.utils.parseEther('0.0002')
 
 describe('ArtongMarketplace', function() {
   before(async function () {
@@ -24,7 +27,7 @@ describe('ArtongMarketplace', function() {
 
   beforeEach(async function () {
     const [owner, feeReciever, randomUser1, randomUser2, _] = await ethers.getSigners();
-    const artongMarketplace = await upgrades.deployProxy(
+    const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,
       [platformFee, feeReciever.address],
       { initializer: 'initialize' }
@@ -32,7 +35,7 @@ describe('ArtongMarketplace', function() {
     const nft = await this.Nft.deploy(
       name,
       symbol,
-      artongMarketplace.address,
+      marketplace.address,
       platformFee,
       feeReciever.address,
       maxAmount,
@@ -46,17 +49,148 @@ describe('ArtongMarketplace', function() {
     this.feeReciever = feeReciever;
     this.randomUser1 = randomUser1;
     this.randomUser2 = randomUser2;
-    this.artongMarketplace = artongMarketplace;
+    this.marketplace = marketplace;
     this.nft = nft;
   });
 
-  describe('metadata', function() {
-    it('Should have a name', async function() {
-      expect(await this.nft.name()).to.equal(name);
+  describe('Listing Item', function () {
+    context('when not owning NFT', function() {
+      it('Should revert listing', async function() {
+        await expect(this.marketplace.connect(this.randomUser2).listItem(
+          this.nft.address,
+          firstTokenId,
+          price
+        )).to.be.reverted;
+      });
     });
 
-    it('Should have a symbol', async function() {
-      expect(await this.nft.symbol()).to.equal(symbol);
+    context('when not approved', function() {
+      beforeEach(async function() {
+        const nft2 = await this.Nft.deploy(
+          name,
+          symbol,
+          zeroAddress, // set marketplace zeroAddress
+          platformFee,
+          this.feeReciever.address,
+          maxAmount,
+          policy
+        );
+        nft2.mint(this.randomUser1.address, sampleUri);
+
+        this.nft2 = nft2;
+      });
+      
+      it('Should revert listing', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).listItem(
+          this.nft2.address,
+          firstTokenId,
+          price
+        )).to.be.reverted;
+      });
+
+      it('Should approve marketplace and successfuly list item', async function() {
+        await expect(this.nft2.connect(this.randomUser1).setApprovalForAll(this.marketplace.address, true))
+          .to.emit(this.nft2, 'ApprovalForAll')
+          .withArgs(this.randomUser1.address, this.marketplace.address, true);
+
+        await expect(this.marketplace.connect(this.randomUser1).listItem(
+          this.nft2.address,
+          firstTokenId,
+          price
+        )).to.emit(this.marketplace, 'ItemListed')
+          .withArgs(this.randomUser1.address, this.nft2.address, firstTokenId, price);
+      });
+    });
+
+    context('when marketplace is whitelisted', function() {
+      it('Should successfuly list item', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).listItem(
+          this.nft.address,
+          firstTokenId,
+          price
+        )).to.emit(this.marketplace, 'ItemListed')
+          .withArgs(this.randomUser1.address, this.nft.address, firstTokenId, price);
+      });
+    });
+  });
+
+  describe('Canceling Item', function() {
+    this.beforeEach(async function() {
+      await this.marketplace.connect(this.randomUser1).listItem(
+        this.nft.address,
+        firstTokenId,
+        price
+      );
+    });
+
+    it('Should successfully cancel the item', async function() {
+      await expect(this.marketplace.connect(this.randomUser1).cancelListing(
+        this.nft.address,
+        firstTokenId
+      )).to.emit(this.marketplace, 'ItemCanceled')
+        .withArgs(this.randomUser1.address, this.nft.address, firstTokenId);
+    });
+
+    context('when item is not listed', function() {
+      it('Should fail canceling item', async function() {
+        await expect(this.marketplace.cancelListing(
+          this.nft.address,
+          secondTokenId
+        )).to.be.reverted;
+      });
+    });
+
+    context('when not owning the item', function() {
+      it('Should fail canceling item', async function() {
+        await expect(this.marketplace.cancelListing(
+          this.nft.address,
+          firstTokenId
+        )).to.be.reverted;
+      });
+    });
+  });
+
+  describe('Updating Item Price', function() {
+    this.beforeEach(async function() {
+      await this.marketplace.connect(this.randomUser1).listItem(
+        this.nft.address,
+        firstTokenId,
+        price
+      );
+      await this.marketplace.connect(this.randomUser2).listItem(
+        this.nft.address,
+        secondTokenId,
+        price
+      );
+    });
+
+    it('Should successfully update the item', async function() {
+      await expect(this.marketplace.connect(this.randomUser1).updateListing(
+          this.nft.address,
+          firstTokenId,
+          newPrice,
+      )).to.emit(this.marketplace, 'ItemUpdated')
+        .withArgs(this.randomUser1.address, this.nft.address, firstTokenId, newPrice);
+    });
+
+    context('when item is not listed', function() {
+      it('Should fail updating item', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).updateListing(
+          this.nft.address,
+          nonExistentTokenId,
+          newPrice,
+        )).to.be.reverted;
+      });
+    });
+
+    context('when not owning the item', function() {
+      it('Should fail updating item', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).updateListing(
+          this.nft.address,
+          secondTokenId,
+          newPrice,
+        )).to.be.reverted;
+      });
     });
   });
 });
