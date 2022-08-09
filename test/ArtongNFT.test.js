@@ -9,7 +9,7 @@ chai.use(solidity);
 const name = 'ArtongNFT';
 const symbol = 'ANFT';
 const platformFee = 500; // 5%
-const maxAmount = 3;
+const maxAmount = 4;
 const policy = 0;
 
 const firstTokenId = 1;
@@ -46,11 +46,11 @@ describe('ArtongNFT', function() {
 
   describe('metadata', function() {
     it('Should have a name', async function() {
-      expect(await this.artongNft.name()).to.be.equal(name);
+      expect(await this.artongNft.name()).to.equal(name);
     });
 
     it('Should have a symbol', async function() {
-      expect(await this.artongNft.symbol()).to.be.equal(symbol);
+      expect(await this.artongNft.symbol()).to.equal(symbol);
     });
   });
 
@@ -121,6 +121,7 @@ describe('ArtongNFT', function() {
       beforeEach(async function () {
         await this.artongNft.mint(this.randomUser1.address, sampleUri);
         await this.artongNft.mint(this.randomUser2.address, sampleUri);
+        await this.artongNft.mint(this.randomUser1.address, sampleUri);
       });
 
       describe('maxAmount', function() {
@@ -171,6 +172,26 @@ describe('ArtongNFT', function() {
         it('Should fail to burn a token', async function() {
           await expect(this.artongNft.connect(this.randomUser2).burn(firstTokenId))
             .to.be.reverted;
+        });
+      });
+
+      describe('balanceOf', function () {
+        context('when the given address owns some tokens', function () {
+          it('Should return the amount of tokens owned by the given address', async function () {
+            expect(await this.artongNft.balanceOf(this.randomUser1.address)).to.equal(2);
+          });
+        });
+  
+        context('when the given address does not own any tokens', function () {
+          it('Should return 0', async function () {
+            expect(await this.artongNft.balanceOf(this.feeReciever.address)).to.equal(0);
+          });
+        });
+  
+        context('when querying the zero address', function () {
+          it('Should throw error', async function () {
+            await expect(this.artongNft.balanceOf(zeroAddress)).to.be.reverted;
+          });
         });
       });
     });
