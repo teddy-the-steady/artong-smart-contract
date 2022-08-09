@@ -43,7 +43,7 @@ describe("ArtongNFT", function() {
 
   describe("policy", function() {
     context("when owner set policy to 1", function() {
-      it("Should succeed and policy = 1", async function() {
+      it("Should succeed and return policy 1", async function() {
         await this.artongNft.connect(this.owner).setPolicy(1);
 
         expect(await this.artongNft.policy()).to.equal(1);
@@ -112,7 +112,7 @@ describe("ArtongNFT", function() {
             .withArgs(this.randomUser1.address, zeroAddress, firstTokenId);
         });
 
-        it("Should set paused = true", async function() {
+        it("Should be able to set paused = true", async function() {
           await expect(this.artongNft.connect(this.marketplace).pause())
             .to.emit(this.artongNft, 'Paused')
             .withArgs(this.marketplace.address);

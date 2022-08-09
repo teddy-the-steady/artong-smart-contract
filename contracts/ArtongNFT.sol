@@ -10,7 +10,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract ArtongNFT is ERC721URIStorage, EIP712, Pausable, ERC721Burnable, Ownable {
+contract ArtongNFT is
+    ERC721URIStorage,
+    EIP712,
+    Pausable,
+    ERC721Burnable,
+    Ownable
+{
     using Counters for Counters.Counter;
 
     Counters.Counter private tokenIdCounter;
