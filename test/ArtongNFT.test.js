@@ -175,6 +175,14 @@ describe('ArtongNFT', function() {
         });
       });
 
+      describe('minter', function() {
+        it('Should be able to burn minted token', async function() {
+          await expect(this.artongNft.connect(this.randomUser1).burn(firstTokenId))
+            .to.emit(this.artongNft, 'Transfer')
+            .withArgs(this.randomUser1.address, zeroAddress, firstTokenId);
+        });
+      });
+
       describe('balanceOf', function () {
         context('when the given address owns some tokens', function () {
           it('Should return the amount of tokens owned by the given address', async function () {
