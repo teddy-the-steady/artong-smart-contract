@@ -34,7 +34,6 @@ describe('ArtongNFT', function() {
       maxAmount,
       policy
     );
-    await artongNft.deployed();
 
     this.owner = owner;
     this.feeReciever = feeReciever;
@@ -236,7 +235,6 @@ describe('ArtongNFT Lazy minting', function() {
       maxAmount,
       policy
     );
-    await artongNft.deployed();
 
     // the redeemerContract is an instance of the contract that's wired up to the redeemer's signing key
     // TODO] this.artongNft.connect(this.redeemer).redeem 이랑 어떤점이 다르지??
