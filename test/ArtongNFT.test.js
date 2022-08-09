@@ -1,21 +1,24 @@
 const chai = require('chai');
 const { expect } = require('chai');
-const { ethers } = require("hardhat");
+const { ethers } = require('hardhat');
 const { LazyMinter } = require('./lib')
 const { solidity } = require('ethereum-waffle');
+const { before } = require('mocha');
 chai.use(solidity);
 
-const name = "ArtongNFT";
-const symbol = "ANFT";
+const name = 'ArtongNFT';
+const symbol = 'ANFT';
 const platformFee = 500; // 5%
 const maxAmount = 3;
 const policy = 0;
 
 const firstTokenId = 1;
+const secondTokenId = 2;
+const nonExistentTokenId = 99;
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const sampleUri = 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
 
-describe("ArtongNFT", function() {
+describe('ArtongNFT', function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
   });
@@ -41,16 +44,48 @@ describe("ArtongNFT", function() {
     this.artongNft = artongNft;
   });
 
-  describe("policy", function() {
-    context("when owner set policy to 1", function() {
-      it("Should succeed and return policy 1", async function() {
+  describe('metadata', function() {
+    it('Should have a name', async function() {
+      expect(await this.artongNft.name()).to.be.equal(name);
+    });
+
+    it('Should have a symbol', async function() {
+      expect(await this.artongNft.symbol()).to.be.equal(symbol);
+    });
+  });
+
+  describe('token URI', function() {
+    context('when queried for non existent token id', function() {
+      it('Should fail to query', async function () {
+        await expect(this.artongNft.tokenURI(nonExistentTokenId)).to.be.reverted;
+      });
+
+      context('when owner burns an existing token', function() {
+        beforeEach(async function() {
+          await this.artongNft.mint(this.owner.address, sampleUri);
+        });
+
+        it('Should owner be able to burn and fail to query a burnt token', async function () {
+          await expect(await this.artongNft.connect(this.owner).burn(firstTokenId))
+            .to.emit(this.artongNft, 'Transfer')
+            .withArgs(this.owner.address, zeroAddress, firstTokenId);
+
+          await expect(this.artongNft.tokenURI(firstTokenId)).to.be.reverted;
+        });
+      });
+    });
+  });
+
+  describe('policy', function() {
+    context('when owner set policy to 1', function() {
+      it('Should succeed and return policy 1', async function() {
         await this.artongNft.connect(this.owner).setPolicy(1);
 
         expect(await this.artongNft.policy()).to.equal(1);
       });
 
-      context("when policy is Immediate = 0", async function() {
-        it("Should succeed to mint", async function() {
+      context('when policy is Immediate = 0', async function() {
+        it('Should succeed to mint', async function() {
           await this.artongNft.connect(this.owner).setPolicy(0);
 
           await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
@@ -59,8 +94,8 @@ describe("ArtongNFT", function() {
         });
       });
   
-      context("when policy is Approved = 1", async function() {
-        it("Should fail to mint", async function() {
+      context('when policy is Approved = 1', async function() {
+        it('Should fail to mint', async function() {
           await this.artongNft.connect(this.owner).setPolicy(1);
 
           await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
@@ -69,15 +104,15 @@ describe("ArtongNFT", function() {
       });
     });
 
-    context("when random user tries to set policy", function() {
-      it("Should fail", async function() {
+    context('when random user tries to set policy', function() {
+      it('Should fail', async function() {
         await expect(this.artongNft.connect(this.randomUser1).setPolicy(1))
           .to.be.reverted;
       });
     })
   });
 
-  context("when policy is Immediate = 0", async function() {
+  context('when policy is Immediate = 0', async function() {
     before(async function() {
       await this.artongNft.connect(this.owner).setPolicy(0);
     });
@@ -88,9 +123,9 @@ describe("ArtongNFT", function() {
         await this.artongNft.mint(this.randomUser2.address, sampleUri);
       });
 
-      describe("maxAmount", function() {
-        context("when maximum amount is reached", function() {
-          it("Should fail to mint", async function() {
+      describe('maxAmount', function() {
+        context('when maximum amount is reached', function() {
+          it('Should fail to mint', async function() {
             await this.artongNft.mint(this.randomUser2.address, sampleUri);
             
             await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
@@ -99,27 +134,27 @@ describe("ArtongNFT", function() {
         });
       });
 
-      describe("whitelisted marketplace", function() {
-        it("Should be able to pause", async function() {
+      describe('whitelisted marketplace', function() {
+        it('Should be able to pause', async function() {
           await expect(this.artongNft.connect(this.marketplace).pause())
             .to.emit(this.artongNft, 'Paused')
             .withArgs(this.marketplace.address);
         });
     
-        it("Should be able to burn a token", async function() {
+        it('Should be able to burn a token', async function() {
           await expect(this.artongNft.connect(this.marketplace).burn(firstTokenId))
             .to.emit(this.artongNft, 'Transfer')
             .withArgs(this.randomUser1.address, zeroAddress, firstTokenId);
         });
 
-        it("Should be able to set paused = true", async function() {
+        it('Should be able to set paused = true', async function() {
           await expect(this.artongNft.connect(this.marketplace).pause())
             .to.emit(this.artongNft, 'Paused')
             .withArgs(this.marketplace.address);
         });
 
-        context("when paused = true", function() {
-          it("Should fail to mint", async function() {
+        context('when paused = true', function() {
+          it('Should fail to mint', async function() {
             await this.artongNft.connect(this.marketplace).pause();
 
             await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
@@ -128,12 +163,12 @@ describe("ArtongNFT", function() {
         });
       });
 
-      describe("random user", function() {
-        it("Should fail to pause contract", async function() {
+      describe('random user', function() {
+        it('Should fail to pause contract', async function() {
           await expect(this.artongNft.connect(this.randomUser1).pause()).to.be.reverted;
         });
     
-        it("Should fail to burn a token", async function() {
+        it('Should fail to burn a token', async function() {
           await expect(this.artongNft.connect(this.randomUser2).burn(firstTokenId))
             .to.be.reverted;
         });
@@ -142,7 +177,7 @@ describe("ArtongNFT", function() {
   });
 });
 
-describe("ArtongNFT Lazy minting", function() {
+describe('ArtongNFT Lazy minting', function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
   });
@@ -175,18 +210,18 @@ describe("ArtongNFT Lazy minting", function() {
     this.redeemerContract = redeemerContract;
   });
 
-  it("Should redeem an NFT from a signed voucher", async function() {
+  it('Should redeem an NFT from a signed voucher', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
     const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
 
-    await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: ethers.utils.parseEther("0.0001") }))
+    await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: ethers.utils.parseEther('0.0001') }))
       .to.emit(this.artongNft, 'Transfer')  // transfer from null address to minter
       .withArgs(zeroAddress, this.minter.address, firstTokenId)
       .and.to.emit(this.artongNft, 'Transfer') // transfer from minter to redeemer
       .withArgs(this.minter.address, this.redeemer.address, firstTokenId);
   });
 
-  it("Should fail to redeem an NFT voucher that's signed by an unauthorized account", async function() {
+  it('Should fail to redeem an NFT voucher thats signed by an unauthorized account', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.randomUser });
     const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
 
@@ -194,8 +229,8 @@ describe("ArtongNFT Lazy minting", function() {
       .to.be.revertedWith('Signature invalid');
   });
 
-  context("when payment >= minPrice", function() {
-    it("Should redeem", async function() {
+  context('when payment >= minPrice', function() {
+    it('Should redeem', async function() {
       const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
       const minPrice = ethers.constants.WeiPerEther; // charge 1 Eth
       const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
@@ -208,8 +243,8 @@ describe("ArtongNFT Lazy minting", function() {
     });
   });
 
-  context("when payment < minPrice", function() {
-    it("Should fail to redeem", async function() {
+  context('when payment < minPrice', function() {
+    it('Should fail to redeem', async function() {
       const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
       const minPrice = ethers.constants.WeiPerEther;
       const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, minPrice);
@@ -220,7 +255,7 @@ describe("ArtongNFT Lazy minting", function() {
     });
   });
 
-  it("Should let minter withdraw earning and feeReceipient should recieve fee", async function() {
+  it('Should let minter withdraw earning and feeReceipient should recieve fee', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
     const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
     const price = ethers.utils.parseEther('0.001');
