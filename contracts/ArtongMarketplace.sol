@@ -228,6 +228,10 @@ contract ArtongMarketplace is
         uint256 price = listingPrices[_nftAddress][_tokenId][_owner];
         uint256 feeAmount = _calculateFeeAmount(price, platformFee);
 
+        // Send fee to feeReceipient
+        (bool success,) = feeReceipient.call{value : feeAmount}("");
+        require(success, "Transfer failed");
+
         address minter = minters[_nftAddress][_tokenId];
         TokenRoyalty memory tokenRoyalty = tokenRoyalties[_owner];
 
@@ -252,10 +256,6 @@ contract ArtongMarketplace is
         if (IERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId)) {
             IERC721(_nftAddress).safeTransferFrom(_owner, msg.sender, _tokenId);
         }
-
-        // Send fee to feeReceipient
-        (bool success,) = feeReceipient.call{value : feeAmount}("");
-        require(success, "Transfer failed");
 
         emit ItemSold(
             _owner,
