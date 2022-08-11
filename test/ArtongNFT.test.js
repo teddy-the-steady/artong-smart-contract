@@ -56,7 +56,8 @@ describe('ArtongNFT', function() {
   describe('token URI', function() {
     context('when queried for non existent token id', function() {
       it('Should fail to query', async function () {
-        await expect(this.artongNft.tokenURI(nonExistentTokenId)).to.be.reverted;
+        await expect(this.artongNft.tokenURI(nonExistentTokenId))
+          .to.be.revertedWith("ERC721: invalid token ID");
       });
 
       context('when owner burns an existing token', function() {
@@ -69,7 +70,8 @@ describe('ArtongNFT', function() {
             .to.emit(this.artongNft, 'Transfer')
             .withArgs(this.owner.address, zeroAddress, firstTokenId);
 
-          await expect(this.artongNft.tokenURI(firstTokenId)).to.be.reverted;
+          await expect(this.artongNft.tokenURI(firstTokenId))
+            .to.be.revertedWith("ERC721: invalid token ID");
         });
       });
     });
@@ -106,7 +108,7 @@ describe('ArtongNFT', function() {
     context('when random user tries to set policy', function() {
       it('Should fail', async function() {
         await expect(this.artongNft.connect(this.randomUser1).setPolicy(1))
-          .to.be.reverted;
+          .to.be.revertedWith("Ownable: caller is not the owner");
       });
     })
   });
@@ -129,7 +131,7 @@ describe('ArtongNFT', function() {
             await this.artongNft.mint(this.randomUser2.address, sampleUri);
             
             await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
-              .to.reverted;
+              .to.revertedWith("Maximum number of NFTs reached");
           });
         });
       });
@@ -158,19 +160,20 @@ describe('ArtongNFT', function() {
             await this.artongNft.connect(this.marketplace).pause();
 
             await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
-              .to.be.reverted;
+              .to.be.revertedWith("Pausable: paused");
           });
         });
       });
 
       describe('random user', function() {
         it('Should fail to pause contract', async function() {
-          await expect(this.artongNft.connect(this.randomUser1).pause()).to.be.reverted;
+          await expect(this.artongNft.connect(this.randomUser1).pause())
+            .to.be.revertedWith("Not authorized");
         });
     
         it('Should fail to burn a token', async function() {
           await expect(this.artongNft.connect(this.randomUser2).burn(firstTokenId))
-            .to.be.reverted;
+            .to.be.revertedWith("ERC721: caller is not token owner nor approved");
         });
       });
 
@@ -197,7 +200,8 @@ describe('ArtongNFT', function() {
   
         context('when querying the zero address', function () {
           it('Should throw error', async function () {
-            await expect(this.artongNft.balanceOf(zeroAddress)).to.be.reverted;
+            await expect(this.artongNft.balanceOf(zeroAddress))
+              .to.be.revertedWith("ERC721: address zero is not a valid owner");
           });
         });
       });
@@ -211,7 +215,8 @@ describe('ArtongNFT', function() {
   
         context('when the given token ID was not tracked by this token', function () {
           it('Should fail to return the owner', async function () {
-            await expect(this.artongNft.ownerOf(nonExistentTokenId)).to.be.reverted;
+            await expect(this.artongNft.ownerOf(nonExistentTokenId))
+              .to.be.revertedWith("ERC721: invalid token ID");
           });
         });
       });
@@ -299,7 +304,7 @@ describe('ArtongNFT Lazy minting', function() {
   it('Should let minter withdraw earning and feeReceipient should recieve fee', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
     const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
-    const price = ethers.utils.parseEther('0.001');
+    const price = ethers.utils.parseEther('0.0001');
 
     await expect(await this.redeemerContract.redeem(this.redeemer.address, voucher, { value: price }))
       .to.changeEtherBalances(
