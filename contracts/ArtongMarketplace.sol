@@ -161,7 +161,7 @@ contract ArtongMarketplace is
         uint256 _tokenId,
         uint256 _price
     ) external notListed(_nftAddress, _tokenId, msg.sender) {
-        if (IERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId)) {
+        if (_isNFTValid(_nftAddress)) {
             IERC721 nft = IERC721(_nftAddress);
             require(nft.ownerOf(_tokenId) == msg.sender, "not owning item");
             require(
@@ -258,7 +258,7 @@ contract ArtongMarketplace is
         IArtongNFT(_nftAddress).setPendingWithdrawal{value: price - feeAmount}(_owner);
 
         // Transfer NFT to buyer
-        if (IERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId)) {
+        if (_isNFTValid(_nftAddress)) {
             IERC721(_nftAddress).safeTransferFrom(_owner, msg.sender, _tokenId);
         }
 
@@ -312,11 +312,15 @@ contract ArtongMarketplace is
         uint256 _tokenId,
         address _owner
     ) internal view {
-        if (IERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId)) {
+        if (_isNFTValid(_nftAddress)) {
             IERC721 nft = IERC721(_nftAddress);
             require(nft.ownerOf(_tokenId) == _owner, "not owning item");
         } else {
             revert("invalid nft address");
         }
+    }
+
+    function _isNFTValid(address _nftAddress) private view returns (bool) {
+        return IERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId);
     }
 }
