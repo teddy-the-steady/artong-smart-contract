@@ -91,6 +91,9 @@ contract ArtongMarketplace is
     /// @notice Minter -> TokenRoyalty
     mapping(address => TokenRoyalty) public tokenRoyalties;
 
+    /// @notice withdrawals from change transfer failures
+    mapping(address => uint256) pendingWithdrawals;
+
     // IFantomAddressRegistry public addressRegistry; for other known contracts
 
     modifier isListed(
@@ -220,17 +223,21 @@ contract ArtongMarketplace is
         address _owner
     )
         external
+        payable
         nonReentrant
         isListed(_nftAddress, _tokenId, _owner)
     {
         _validOwner(_nftAddress, _tokenId, _owner);
 
         uint256 price = listingPrices[_nftAddress][_tokenId][_owner];
+
+        require(msg.value >= price, "payment amount not enough");
+
         uint256 feeAmount = _calculateFeeAmount(price, platformFee);
 
         // Send fee to feeReceipient
         (bool success,) = feeReceipient.call{value : feeAmount}("");
-        require(success, "Transfer failed");
+        require(success, "Fee transfer failed");
 
         address minter = minters[_nftAddress][_tokenId];
         TokenRoyalty memory tokenRoyalty = tokenRoyalties[_owner];
@@ -257,6 +264,13 @@ contract ArtongMarketplace is
             IERC721(_nftAddress).safeTransferFrom(_owner, msg.sender, _tokenId);
         }
 
+        if (msg.value > price) {
+            (bool success2,) = msg.sender.call{value : msg.value - price}("");
+            if (!success2) { // TODO] revert 처리 하는게 나을까?
+                pendingWithdrawals[msg.sender] += msg.value - price;
+            }
+        }
+
         emit ItemSold(
             _owner,
             msg.sender,
@@ -266,6 +280,16 @@ contract ArtongMarketplace is
         );
 
         delete (listingPrices[_nftAddress][_tokenId][_owner]);
+    }
+
+    function withdraw() public {
+        uint256 amount = pendingWithdrawals[msg.sender];
+        require(amount != 0, "nothing to withdraw");
+        require(address(this).balance >= amount, "balance not enough to withdraw");
+        
+        address payable receiver = payable(msg.sender);
+        pendingWithdrawals[msg.sender] = 0;
+        receiver.transfer(amount);
     }
 
     function _calculateFeeAmount(uint256 price, uint16 fee) private pure returns (uint256) {
