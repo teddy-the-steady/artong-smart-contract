@@ -77,9 +77,8 @@ contract ArtongMarketplace is
     /// @notice NftAddress -> Token ID -> Minter
     mapping(address => mapping(uint256 => address)) public minters;
 
-    /// @notice NftAddress -> Token ID -> Owner -> Listing item price
-    mapping(address => mapping(uint256 => mapping(address => uint256)))
-        public listingPrices;
+    /// @notice NftAddress -> Token ID -> Listing item price
+    mapping(address => mapping(uint256 => uint256)) public listingPrices;
 
     /// @notice NftAddress -> Token ID -> Offerer -> Offer
     mapping(address => mapping(uint256 => mapping(address => Offer)))
@@ -101,7 +100,7 @@ contract ArtongMarketplace is
         uint256 _tokenId,
         address _owner
     ) {
-        uint256 listingPrice = listingPrices[_nftAddress][_tokenId][_owner];
+        uint256 listingPrice = listingPrices[_nftAddress][_tokenId];
         require(listingPrice > 0, "not listed item");
         _;
     }
@@ -111,7 +110,7 @@ contract ArtongMarketplace is
         uint256 _tokenId,
         address _owner
     ) {
-        uint256 listingPrice = listingPrices[_nftAddress][_tokenId][_owner];
+        uint256 listingPrice = listingPrices[_nftAddress][_tokenId];
         require(listingPrice == 0, "already listed");
         _;
     }
@@ -175,7 +174,7 @@ contract ArtongMarketplace is
             revert("invalid nft address");
         }
 
-        listingPrices[_nftAddress][_tokenId][msg.sender] = _price;
+        listingPrices[_nftAddress][_tokenId] = _price;
         emit ItemListed(
             msg.sender,
             _nftAddress,
@@ -204,7 +203,7 @@ contract ArtongMarketplace is
         isListed(_nftAddress, _tokenId, msg.sender)
     {
         _isOwnerValid(_nftAddress, _tokenId, msg.sender);
-        listingPrices[_nftAddress][_tokenId][msg.sender] = _newPrice;
+        listingPrices[_nftAddress][_tokenId] = _newPrice;
         emit ItemUpdated(
             msg.sender,
             _nftAddress,
@@ -228,7 +227,7 @@ contract ArtongMarketplace is
     {
         _isOwnerValid(_nftAddress, _tokenId, _owner);
 
-        uint256 price = listingPrices[_nftAddress][_tokenId][_owner];
+        uint256 price = listingPrices[_nftAddress][_tokenId];
 
         require(msg.value >= price, "payment amount not enough");
 
@@ -278,7 +277,7 @@ contract ArtongMarketplace is
             price
         );
 
-        delete (listingPrices[_nftAddress][_tokenId][_owner]);
+        delete (listingPrices[_nftAddress][_tokenId]);
     }
 
     function withdraw() public {
@@ -304,7 +303,7 @@ contract ArtongMarketplace is
         uint256 _tokenId,
         address _owner
     ) private {
-        delete (listingPrices[_nftAddress][_tokenId][_owner]);
+        delete (listingPrices[_nftAddress][_tokenId]);
         emit ItemCanceled(_owner, _nftAddress, _tokenId);
     }
 

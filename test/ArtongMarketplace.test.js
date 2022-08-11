@@ -142,10 +142,10 @@ describe('ArtongMarketplace', function() {
 
     context('when not owning the item', function() {
       it('Should fail canceling item', async function() {
-        await expect(this.marketplace.cancelListing(
+        await expect(this.marketplace.connect(this.randomUser2).cancelListing(
           this.nft.address,
           firstTokenId
-        )).to.be.revertedWith("not listed item");
+        )).to.be.revertedWith("not owning item");
       });
     });
   });
@@ -189,7 +189,7 @@ describe('ArtongMarketplace', function() {
           this.nft.address,
           secondTokenId,
           newPrice,
-        )).to.be.revertedWith("not listed item");
+        )).to.be.revertedWith("not owning item");
       });
     });
   });
@@ -214,7 +214,7 @@ describe('ArtongMarketplace', function() {
           this.nft.address,
           secondTokenId,
           this.randomUser1.address
-        )).to.be.revertedWith("not listed item");
+        )).to.be.revertedWith("not owning item");
       });
     });
 
