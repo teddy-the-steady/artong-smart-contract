@@ -7,6 +7,10 @@ import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
+interface IArtongNFT {
+    function setPendingWithdrawal(address) external payable;
+}
+
 contract ArtongMarketplace is
     Initializable,
     OwnableUpgradeable,
@@ -57,22 +61,21 @@ contract ArtongMarketplace is
     }
 
     struct CollectionRoyalty {
-        uint16 royalty;
+        uint16 royalty; // 2 decimals(525->5.25)
         uint256 royaltyBalance;
-        address creator;
     }
 
-    struct Minter {
-        address minter;
-        uint16 royalty;
+    struct TokenRoyalty {
+        uint16 royalty; // 2 decimals(525->5.25)
+        uint256 royaltyBalance;
     }
 
-    uint16 public platformFee;
+    uint16 public platformFee; // 2 decimals(525->5.25)
 
     address payable public feeReceipient;
 
-    /// @notice NftAddress -> Token ID -> Minters
-    mapping(address => mapping(uint256 => Minter)) public minters;
+    /// @notice NftAddress -> Token ID -> Minter
+    mapping(address => mapping(uint256 => address)) public minters;
 
     /// @notice NftAddress -> Token ID -> Owner -> Listing item price
     mapping(address => mapping(uint256 => mapping(address => uint256)))
@@ -84,6 +87,9 @@ contract ArtongMarketplace is
 
     /// @notice NftAddress -> CollectionRoyalty
     mapping(address => CollectionRoyalty) public collectionRoyalties;
+
+    /// @notice Minter -> TokenRoyalty
+    mapping(address => TokenRoyalty) public tokenRoyalties;
 
     // IFantomAddressRegistry public addressRegistry; for other known contracts
 
@@ -160,6 +166,8 @@ contract ArtongMarketplace is
                 nft.isApprovedForAll(msg.sender, address(this)),
                 "artong not approved for this item"
             );
+            // TODO] 보안 측면에서 허들을 두는게 좋을까? nft를 통째로 address import 한다고 해도
+            // setApprovalForAll 안해주면 여기서 걸릴텐데.. 오픈씨는 어떻게 하는거지? 리스팅 하기 전에 setApprovalForAll?
         } else {
             revert("invalid nft address");
         }
@@ -201,6 +209,67 @@ contract ArtongMarketplace is
             _tokenId,
             _newPrice
         );
+    }
+
+    /// @notice Method for buying listed NFT
+    /// @param _nftAddress NFT contract address
+    /// @param _tokenId TokenId
+    function buyItem(
+        address _nftAddress,
+        uint256 _tokenId,
+        address _owner
+    )
+        external
+        nonReentrant
+        isListed(_nftAddress, _tokenId, _owner)
+    {
+        _validOwner(_nftAddress, _tokenId, _owner);
+
+        uint256 price = listingPrices[_nftAddress][_tokenId][_owner];
+        uint256 feeAmount = _calculateFeeAmount(price, platformFee);
+
+        address minter = minters[_nftAddress][_tokenId];
+        TokenRoyalty memory tokenRoyalty = tokenRoyalties[_owner];
+
+        if (minter != address(0) && tokenRoyalty.royalty != 0) {
+            uint256 royaltyFeeAmount = _calculateFeeAmount(price, tokenRoyalty.royalty);
+            tokenRoyalty.royaltyBalance += royaltyFeeAmount;
+            feeAmount += royaltyFeeAmount;
+        }
+
+        CollectionRoyalty memory collectionRoyalty = collectionRoyalties[_nftAddress];
+
+        if (minter != address(0) && collectionRoyalty.royalty != 0) {
+            uint256 collectionRoyaltyFeeAmount = _calculateFeeAmount(price,collectionRoyalty.royalty);
+            collectionRoyalty.royaltyBalance += collectionRoyaltyFeeAmount;
+            feeAmount += collectionRoyaltyFeeAmount;
+        }
+
+        // Send sold amount to seller(extract fee) TODO] ArtongNFT case / external NFT case
+        IArtongNFT(_nftAddress).setPendingWithdrawal{value: price - feeAmount}(_owner);
+
+        // Transfer NFT to buyer
+        if (IERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId)) {
+            IERC721(_nftAddress).safeTransferFrom(_owner, msg.sender, _tokenId);
+        }
+
+        // Send fee to feeReceipient
+        (bool success,) = feeReceipient.call{value : feeAmount}("");
+        require(success, "Transfer failed");
+
+        emit ItemSold(
+            _owner,
+            msg.sender,
+            _nftAddress,
+            _tokenId,
+            price
+        );
+
+        delete (listingPrices[_nftAddress][_tokenId][_owner]);
+    }
+
+    function _calculateFeeAmount(uint256 price, uint16 fee) private pure returns (uint256) {
+        return price * fee / 10000;
     }
 
     function _getNow() internal view virtual returns (uint256) {

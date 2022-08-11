@@ -104,8 +104,8 @@ contract ArtongNFT is
 
     function withdraw() public whenNotPaused {
         uint256 amount = pendingWithdrawals[msg.sender];
-        require(amount != 0);
-        require(address(this).balance >= amount);
+        require(amount != 0, "nothing to withdraw");
+        require(address(this).balance >= amount, "balance not enough to withdraw");
         
         address payable receiver = payable(msg.sender);
         pendingWithdrawals[msg.sender] = 0;
@@ -118,6 +118,10 @@ contract ArtongNFT is
 
     function setPolicy(Policy _policy) public onlyOwner {
         policy = _policy;
+    }
+
+    function setPendingWithdrawal(address minter) external payable {
+        pendingWithdrawals[minter] += msg.value;
     }
 
     /// @notice Returns the chain id of the current blockchain.
