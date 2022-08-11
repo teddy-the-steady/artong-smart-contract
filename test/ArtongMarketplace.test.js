@@ -16,8 +16,8 @@ const secondTokenId = 2;
 const nonExistentTokenId = 99;
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const sampleUri = 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
-const price = ethers.utils.parseEther('0.0001');
-const newPrice = ethers.utils.parseEther('0.0002')
+const price = ethers.utils.parseEther('0.001');
+const newPrice = ethers.utils.parseEther('0.002')
 
 describe('ArtongMarketplace', function() {
   before(async function () {
@@ -60,7 +60,7 @@ describe('ArtongMarketplace', function() {
           this.nft.address,
           firstTokenId,
           price
-        )).to.be.reverted;
+        )).to.be.revertedWith("not owning item");
       });
     });
 
@@ -85,7 +85,7 @@ describe('ArtongMarketplace', function() {
           this.nft2.address,
           firstTokenId,
           price
-        )).to.be.reverted;
+        )).to.be.revertedWith("artong not approved for this item");
       });
 
       it('Should approve marketplace and successfuly list item', async function() {
@@ -136,7 +136,7 @@ describe('ArtongMarketplace', function() {
         await expect(this.marketplace.cancelListing(
           this.nft.address,
           secondTokenId
-        )).to.be.reverted;
+        )).to.be.revertedWith("not listed item");
       });
     });
 
@@ -145,7 +145,7 @@ describe('ArtongMarketplace', function() {
         await expect(this.marketplace.cancelListing(
           this.nft.address,
           firstTokenId
-        )).to.be.reverted;
+        )).to.be.revertedWith("not listed item");
       });
     });
   });
@@ -179,7 +179,7 @@ describe('ArtongMarketplace', function() {
           this.nft.address,
           nonExistentTokenId,
           newPrice,
-        )).to.be.reverted;
+        )).to.be.revertedWith("not listed item");
       });
     });
 
@@ -189,7 +189,109 @@ describe('ArtongMarketplace', function() {
           this.nft.address,
           secondTokenId,
           newPrice,
-        )).to.be.reverted;
+        )).to.be.revertedWith("not listed item");
+      });
+    });
+  });
+
+  describe('Buying Item', function() {
+    beforeEach(async function() {
+      await this.marketplace.connect(this.randomUser1).listItem(
+        this.nft.address,
+        firstTokenId,
+        price
+      );
+      await this.marketplace.connect(this.randomUser2).listItem(
+        this.nft.address,
+        secondTokenId,
+        price
+      );
+    });
+
+    context('when seller doesnt own the item', function() {
+      it('Should fail buying item', async function() {
+        await expect(this.marketplace.connect(this.randomUser2).buyItem(
+          this.nft.address,
+          secondTokenId,
+          this.randomUser1.address
+        )).to.be.revertedWith("not listed item");
+      });
+    });
+
+    context('when the amount is not enough', function() {
+      it('Should fail buying item', async function() {
+        const amountPaid = price / 2;
+        
+        await expect(this.marketplace.connect(this.randomUser2).buyItem(
+          this.nft.address,
+          firstTokenId,
+          this.randomUser1.address,
+          { value: amountPaid }
+        )).to.be.revertedWith("payment amount not enough");
+      });
+    });
+
+    context('when the amount is enough', function() {
+      context('when the amount = price', function() {
+        it('Should successfully purchase item', async function() {
+          await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser1.address);
+
+          await expect(await this.marketplace.connect(this.randomUser2).buyItem(
+            this.nft.address,
+            firstTokenId,
+            this.randomUser1.address,
+            { value: price }
+          )).to.emit(this.marketplace, 'ItemSold')
+            .withArgs(
+              this.randomUser1.address,
+              this.randomUser2.address,
+              this.nft.address,
+              firstTokenId,
+              price
+            )
+            .to.changeEtherBalances(
+              [this.randomUser2, this.nft, this.feeReciever],
+              [price.mul(-1), price * (10000 - platformFee) / 10000, price * platformFee / 10000]
+            );
+
+            await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
+
+            expect(await this.nft.connect(this.randomUser1).getWithdrawal())
+              .to.equal(price * (10000 - platformFee) / 10000);
+        });
+      });
+
+      context('when the amount > price', function() {
+        it('Should successfully purchase item', async function() {
+          await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser1.address);
+
+          await expect(await this.marketplace.connect(this.randomUser2).buyItem(
+            this.nft.address,
+            firstTokenId,
+            this.randomUser1.address,
+            { value: price.add(ethers.utils.parseEther('0.0003')) }
+          )).to.emit(this.marketplace, 'ItemSold')
+            .withArgs(
+              this.randomUser1.address,
+              this.randomUser2.address,
+              this.nft.address,
+              firstTokenId,
+              price
+            )
+            .to.changeEtherBalances(
+              [this.randomUser2, this.nft, this.feeReciever],
+              [
+                price.mul(-1),
+                price * (10000 - platformFee) / 10000,
+                price * platformFee / 10000
+              ]
+            );
+
+            await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
+
+            expect(await this.nft.connect(this.randomUser1).getWithdrawal())
+              .to.equal(price * (10000 - platformFee) / 10000);
+        });
       });
     });
   });
