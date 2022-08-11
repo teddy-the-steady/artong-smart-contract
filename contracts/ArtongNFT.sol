@@ -48,7 +48,7 @@ contract ArtongNFT is
     mapping(address => uint256) pendingWithdrawals;
 
     modifier checkMaxAmount() {
-		require(maxAmount > tokenIdCounter.current(), "Maximum number of NFTs reached.");
+		require(maxAmount > tokenIdCounter.current(), "Maximum number of NFTs reached");
 		_;
 	}
 
