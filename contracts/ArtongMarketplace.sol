@@ -190,7 +190,7 @@ contract ArtongMarketplace is
         nonReentrant
         isListed(_nftAddress, _tokenId, msg.sender)
     {
-        _validOwner(_nftAddress, _tokenId, msg.sender);
+        _isOwnerValid(_nftAddress, _tokenId, msg.sender);
         _cancelListing(_nftAddress, _tokenId, msg.sender);
     }
 
@@ -198,13 +198,12 @@ contract ArtongMarketplace is
     /// @param _nftAddress Address of NFT contract
     /// @param _tokenId Token ID of NFT
     /// @param _newPrice New sale price
-    function updateListing(
-        address _nftAddress,
-        uint256 _tokenId,
-        uint256 _newPrice
-    ) external nonReentrant isListed(_nftAddress, _tokenId, _msgSender()) {
-        _validOwner(_nftAddress, _tokenId, msg.sender);
-
+    function updateListing(address _nftAddress, uint256 _tokenId, uint256 _newPrice)
+        external
+        nonReentrant
+        isListed(_nftAddress, _tokenId, msg.sender)
+    {
+        _isOwnerValid(_nftAddress, _tokenId, msg.sender);
         listingPrices[_nftAddress][_tokenId][msg.sender] = _newPrice;
         emit ItemUpdated(
             msg.sender,
@@ -227,7 +226,7 @@ contract ArtongMarketplace is
         nonReentrant
         isListed(_nftAddress, _tokenId, _owner)
     {
-        _validOwner(_nftAddress, _tokenId, _owner);
+        _isOwnerValid(_nftAddress, _tokenId, _owner);
 
         uint256 price = listingPrices[_nftAddress][_tokenId][_owner];
 
@@ -309,7 +308,7 @@ contract ArtongMarketplace is
         emit ItemCanceled(_owner, _nftAddress, _tokenId);
     }
 
-    function _validOwner(
+    function _isOwnerValid(
         address _nftAddress,
         uint256 _tokenId,
         address _owner
