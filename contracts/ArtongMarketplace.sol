@@ -75,9 +75,6 @@ contract ArtongMarketplace is
 
     address payable public feeReceipient;
 
-    /// @notice NftAddress -> Token ID -> Minter
-    mapping(address => mapping(uint256 => address)) public minters;
-
     /// @notice NftAddress -> Token ID -> Listing item price
     mapping(address => mapping(uint256 => uint256)) public listingPrices;
 
@@ -255,10 +252,9 @@ contract ArtongMarketplace is
         (bool success,) = feeReceipient.call{value : feeAmount}("");
         require(success, "Fee transfer failed");
 
-        address minter = minters[_nftAddress][_tokenId];
         uint16 tokenRoyalty = tokenRoyalties[_seller];
 
-        if (minter != address(0) && tokenRoyalty != 0) {
+        if (tokenRoyalty != 0) {
             uint256 royaltyFeeAmount = _calculateFeeAmount(_price, tokenRoyalty);
             artongBalances[_seller].royaltyBalance += royaltyFeeAmount;
             feeAmount += royaltyFeeAmount;
@@ -266,7 +262,7 @@ contract ArtongMarketplace is
 
         CollectionRoyalty memory collectionRoyalty = collectionRoyalties[_nftAddress];
 
-        if (minter != address(0) && collectionRoyalty.royalty != 0) {
+        if (collectionRoyalty.royalty != 0) {
             uint256 collectionRoyaltyFeeAmount = _calculateFeeAmount(_price, collectionRoyalty.royalty);
             collectionRoyalty.royaltyBalance += collectionRoyaltyFeeAmount;
             feeAmount += collectionRoyaltyFeeAmount;
