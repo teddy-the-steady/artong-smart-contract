@@ -2,7 +2,7 @@ const chai = require('chai');
 const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
 const { solidity } = require('ethereum-waffle');
-const { before } = require('mocha');
+const { before, it } = require('mocha');
 chai.use(solidity);
 
 const name = 'ArtongNFT';
@@ -28,10 +28,10 @@ describe('ArtongMarketplace', function() {
   });
 
   beforeEach(async function () {
-    const [owner, feeReciever, randomUser1, randomUser2, _] = await ethers.getSigners();
+    const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,
-      [platformFee, feeReciever.address],
+      [platformFee, feeReceipient.address],
       { initializer: 'initialize' }
     );
     const nft = await this.Nft.deploy(
@@ -39,7 +39,7 @@ describe('ArtongMarketplace', function() {
       symbol,
       marketplace.address,
       platformFee,
-      feeReciever.address,
+      feeReceipient.address,
       maxAmount,
       policy
     );
@@ -48,11 +48,43 @@ describe('ArtongMarketplace', function() {
     nft.mint(randomUser2.address, sampleUri);
 
     this.owner = owner;
-    this.feeReciever = feeReciever;
+    this.feeReceipient = feeReceipient;
     this.randomUser1 = randomUser1;
     this.randomUser2 = randomUser2;
     this.marketplace = marketplace;
     this.nft = nft;
+  });
+
+  describe('platformFee and feeReciepient', function() {
+    context('when none owner tries to update', function() {
+      it('Should fail to update platformFee', async function() {
+        await expect(this.marketplace.connect(this.feeReceipient)
+          .updatePlatformFee(300))
+          .to.be.revertedWith('Ownable: caller is not the owner');
+      });
+
+      it('Should fail to update feeReciepient', async function() {
+        await expect(this.marketplace.connect(this.feeReceipient)
+          .updatePlatformFeeRecipient(this.randomUser1.address))
+          .to.be.revertedWith('Ownable: caller is not the owner');
+      });
+    });
+
+    context('when owner tries to update', function() {
+      it('Should be able to update platformFee', async function() {
+        await expect(this.marketplace.connect(this.owner)
+          .updatePlatformFee(300))
+          .to.emit(this.marketplace, 'UpdatePlatformFee')
+          .withArgs(300);
+      });
+
+      it('Should fail to update feeReciepient', async function() {
+        await expect(this.marketplace.connect(this.owner)
+          .updatePlatformFeeRecipient(this.randomUser1.address))
+          .to.emit(this.marketplace, 'UpdatePlatformFeeRecipient')
+          .withArgs(this.randomUser1.address);
+      });
+    });
   });
 
   describe('Listing Item', function () {
@@ -73,7 +105,7 @@ describe('ArtongMarketplace', function() {
           symbol,
           zeroAddress, // set marketplace zeroAddress
           platformFee,
-          this.feeReciever.address,
+          this.feeReceipient.address,
           maxAmount,
           policy
         );
@@ -252,7 +284,7 @@ describe('ArtongMarketplace', function() {
               price
             )
             .to.changeEtherBalances(
-              [this.randomUser2, this.nft, this.feeReciever],
+              [this.randomUser2, this.nft, this.feeReceipient],
               [
                 price.mul(-1),
                 price * (10000 - platformFee) / 10000,
@@ -285,7 +317,7 @@ describe('ArtongMarketplace', function() {
               price
             )
             .to.changeEtherBalances(
-              [this.randomUser2, this.nft, this.feeReciever],
+              [this.randomUser2, this.nft, this.feeReceipient],
               [
                 price.mul(-1),
                 price * (10000 - platformFee) / 10000,
@@ -360,13 +392,13 @@ describe('ArtongMarketplace', function() {
           futureBlockTimestamp,
           { value: offerPrice }
         );
-        await this.marketplace.connect(this.feeReciever).createOffer(
+        await this.marketplace.connect(this.feeReceipient).createOffer(
           this.nft.address,
           secondTokenId,
           futureBlockTimestamp,
           { value: offerPrice }
         );
-        await this.marketplace.connect(this.feeReciever).createOffer(
+        await this.marketplace.connect(this.feeReceipient).createOffer(
           this.nft.address,
           firstTokenId,
           pastBlockTimestamp,
@@ -384,7 +416,7 @@ describe('ArtongMarketplace', function() {
       });
 
       it('Should be able to create an offer over expired one', async function() {
-        await expect(this.marketplace.connect(this.feeReciever).createOffer(
+        await expect(this.marketplace.connect(this.feeReceipient).createOffer(
           this.nft.address,
           firstTokenId,
           futureBlockTimestamp,
@@ -396,7 +428,7 @@ describe('ArtongMarketplace', function() {
         await expect(this.marketplace.connect(this.randomUser1).acceptOffer(
           this.nft.address,
           secondTokenId,
-          this.feeReciever.address
+          this.feeReceipient.address
         )).to.be.revertedWith('not owning item');
       });
 
@@ -414,7 +446,7 @@ describe('ArtongMarketplace', function() {
             this.randomUser2.address,
           )
           .to.changeEtherBalances(
-            [this.randomUser2, this.nft, this.feeReciever],
+            [this.randomUser2, this.nft, this.feeReceipient],
             [0, offerPrice * (10000 - platformFee) / 10000, offerPrice * platformFee / 10000]
           );
 

@@ -364,6 +364,25 @@ contract ArtongMarketplace is
         delete (offers[_nftAddress][_tokenId][_creator]);
     }
 
+    /// @notice Method for updating platform fee
+    /// @dev Only admin
+    /// @param _platformFee uint16 the platform fee to set
+    function updatePlatformFee(uint16 _platformFee) external onlyOwner {
+        platformFee = _platformFee;
+        emit UpdatePlatformFee(_platformFee);
+    }
+
+    /// @notice Method for updating platform fee address
+    /// @dev Only admin
+    /// @param _platformFeeRecipient payable address the address to sends the funds to
+    function updatePlatformFeeRecipient(address payable _platformFeeRecipient)
+        external
+        onlyOwner
+    {
+        feeReceipient = _platformFeeRecipient;
+        emit UpdatePlatformFeeRecipient(_platformFeeRecipient);
+    }
+
     function withdraw() public {
         uint256 moment = _getNow();
         uint256 amount = getArtongBalance(moment);
