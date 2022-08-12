@@ -17,7 +17,9 @@ const nonExistentTokenId = 99;
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const sampleUri = 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
 const price = ethers.utils.parseEther('0.001');
-const newPrice = ethers.utils.parseEther('0.002')
+const newPrice = ethers.utils.parseEther('0.002');
+const pastBlockTimestamp = 0;
+const futureBlockTimestamp = 1;
 
 describe('ArtongMarketplace', function() {
   before(async function () {
@@ -251,7 +253,11 @@ describe('ArtongMarketplace', function() {
             )
             .to.changeEtherBalances(
               [this.randomUser2, this.nft, this.feeReciever],
-              [price.mul(-1), price * (10000 - platformFee) / 10000, price * platformFee / 10000]
+              [
+                price.mul(-1),
+                price * (10000 - platformFee) / 10000,
+                price * platformFee / 10000
+              ]
             );
 
             await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
@@ -292,6 +298,130 @@ describe('ArtongMarketplace', function() {
             expect(await this.nft.connect(this.randomUser1).getWithdrawal())
               .to.equal(price * (10000 - platformFee) / 10000);
         });
+      });
+    });
+  });
+
+  describe('Offering Item', function() {
+    const offerPrice = ethers.utils.parseEther('0.002');
+
+    context('when self offer', function() {
+      it('Should fail to create an offer', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).createOffer(
+          this.nft.address,
+          firstTokenId,
+          futureBlockTimestamp,
+          { value: offerPrice }
+        )).to.be.revertedWith('cannot self offer');
+      });
+    });
+
+    context('when offer amount < 0.001 ether', function() {
+      it('Should fail to create an offer', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).createOffer(
+          this.nft.address,
+          firstTokenId,
+          futureBlockTimestamp,
+          { value: ethers.utils.parseEther('0.0005') }
+        )).to.be.revertedWith('offer amount too small');
+      });
+    });
+
+    context('when there is no offer', function() {
+      it('Should be able to create an offer', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).createOffer(
+          this.nft.address,
+          secondTokenId,
+          futureBlockTimestamp,
+          { value: offerPrice }
+        )).to.emit(this.marketplace, 'OfferCreated');
+      });
+
+      it('Should fail to accept offer', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).acceptOffer(
+          this.nft.address,
+          secondTokenId,
+          this.randomUser2.address
+        )).to.be.revertedWith('offer not exists or expired');
+      });
+    });
+
+    context('when there are offers', function() {
+      this.beforeEach(async function() {
+        await this.marketplace.connect(this.randomUser1).createOffer(
+          this.nft.address,
+          secondTokenId,
+          futureBlockTimestamp,
+          { value: offerPrice }
+        );
+        await this.marketplace.connect(this.randomUser2).createOffer(
+          this.nft.address,
+          firstTokenId,
+          futureBlockTimestamp,
+          { value: offerPrice }
+        );
+        await this.marketplace.connect(this.feeReciever).createOffer(
+          this.nft.address,
+          secondTokenId,
+          futureBlockTimestamp,
+          { value: offerPrice }
+        );
+        await this.marketplace.connect(this.feeReciever).createOffer(
+          this.nft.address,
+          firstTokenId,
+          pastBlockTimestamp,
+          { value: offerPrice }
+        );
+      });
+
+      it('Should fail to create offer on same token', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).createOffer(
+          this.nft.address,
+          secondTokenId,
+          futureBlockTimestamp,
+          { value: offerPrice }
+        )).to.be.revertedWith('offer already created');
+      });
+
+      it('Should be able to create an offer over expired one', async function() {
+        await expect(this.marketplace.connect(this.feeReciever).createOffer(
+          this.nft.address,
+          firstTokenId,
+          futureBlockTimestamp,
+          { value: offerPrice }
+        )).to.emit(this.marketplace, 'OfferCreated');
+      });
+
+      it('Should fail to accept offer of not owning token', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).acceptOffer(
+          this.nft.address,
+          secondTokenId,
+          this.feeReciever.address
+        )).to.be.revertedWith('not owning item');
+      });
+
+      it('Should successfully accept offer and sell item', async function() {
+        await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser1.address);
+        
+        await expect(await this.marketplace.connect(this.randomUser1).acceptOffer(
+          this.nft.address,
+          firstTokenId,
+          this.randomUser2.address
+        )).to.emit(this.marketplace, 'OfferAccepted')
+          .withArgs(
+            this.nft.address,
+            firstTokenId,
+            this.randomUser2.address,
+          )
+          .to.changeEtherBalances(
+            [this.randomUser2, this.nft, this.feeReciever],
+            [0, offerPrice * (10000 - platformFee) / 10000, offerPrice * platformFee / 10000]
+          );
+
+        await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
+
+        expect(await this.nft.connect(this.randomUser1).getWithdrawal())
+          .to.equal(offerPrice * (10000 - platformFee) / 10000);
       });
     });
   });

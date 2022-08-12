@@ -47,10 +47,10 @@ contract ArtongMarketplace is
         uint256 price,
         uint256 deadline
     );
-    event OfferCanceled(
-        address indexed creator,
+    event OfferAccepted(
         address indexed nft,
-        uint256 tokenId
+        uint256 tokenId,
+        address indexed creator
     );
     event UpdatePlatformFee(uint16 platformFee);
     event UpdatePlatformFeeRecipient(address payable platformFeeRecipient);
@@ -65,9 +65,10 @@ contract ArtongMarketplace is
         uint256 royaltyBalance;
     }
 
-    struct TokenRoyalty {
-        uint16 royalty; // 2 decimals(525->5.25)
+    struct ArtongBalance {
+        uint256 offerBalance;
         uint256 royaltyBalance;
+        uint256 etcBalance;
     }
 
     uint16 public platformFee; // 2 decimals(525->5.25)
@@ -84,16 +85,17 @@ contract ArtongMarketplace is
     mapping(address => mapping(uint256 => mapping(address => Offer)))
         public offers;
 
+    /// @notice Offerer -> Offer[]
+    mapping(address => Offer[]) public userOffers;
+
     /// @notice NftAddress -> CollectionRoyalty
     mapping(address => CollectionRoyalty) public collectionRoyalties;
 
-    /// @notice Minter -> TokenRoyalty
-    mapping(address => TokenRoyalty) public tokenRoyalties;
+    /// @notice Minter -> Token royalty // 2 decimals(525->5.25)
+    mapping(address => uint16) public tokenRoyalties;
 
-    /// @notice withdrawals from change transfer failures
-    mapping(address => uint256) pendingWithdrawals;
-
-    // IFantomAddressRegistry public addressRegistry; for other known contracts
+    /// @notice User Artong Balance
+    mapping(address => ArtongBalance) artongBalances;
 
     modifier isListed(
         address _nftAddress,
@@ -189,7 +191,7 @@ contract ArtongMarketplace is
         nonReentrant
         isListed(_nftAddress, _tokenId, msg.sender)
     {
-        _isOwnerValid(_nftAddress, _tokenId, msg.sender);
+        _isValidOwner(_nftAddress, _tokenId, msg.sender);
         _cancelListing(_nftAddress, _tokenId, msg.sender);
     }
 
@@ -202,7 +204,7 @@ contract ArtongMarketplace is
         nonReentrant
         isListed(_nftAddress, _tokenId, msg.sender)
     {
-        _isOwnerValid(_nftAddress, _tokenId, msg.sender);
+        _isValidOwner(_nftAddress, _tokenId, msg.sender);
         listingPrices[_nftAddress][_tokenId] = _newPrice;
         emit ItemUpdated(
             msg.sender,
@@ -215,79 +217,207 @@ contract ArtongMarketplace is
     /// @notice Method for buying listed NFT
     /// @param _nftAddress NFT contract address
     /// @param _tokenId TokenId
+    /// @param _owner Token owner
     function buyItem(
         address _nftAddress,
         uint256 _tokenId,
         address _owner
-    )
+    ) 
         external
         payable
         nonReentrant
         isListed(_nftAddress, _tokenId, _owner)
     {
-        _isOwnerValid(_nftAddress, _tokenId, _owner);
-
+        _isValidOwner(_nftAddress, _tokenId, _owner);
+        
         uint256 price = listingPrices[_nftAddress][_tokenId];
+        address seller = _owner;
+        address buyer = msg.sender;
+        uint256 payAmount = msg.value;
+        _buyItem(_nftAddress, _tokenId, seller, buyer, price, payAmount);
+    }
 
-        require(msg.value >= price, "payment amount not enough");
+    function _buyItem(
+        address _nftAddress,
+        uint256 _tokenId,
+        address _seller,
+        address _buyer,
+        uint256 _price,
+        uint256 payAmount
+    )
+        internal
+    {
+        require(payAmount >= _price, "payment amount not enough");
 
-        uint256 feeAmount = _calculateFeeAmount(price, platformFee);
+        uint256 feeAmount = _calculateFeeAmount(_price, platformFee);
 
         // Send fee to feeReceipient
         (bool success,) = feeReceipient.call{value : feeAmount}("");
         require(success, "Fee transfer failed");
 
         address minter = minters[_nftAddress][_tokenId];
-        TokenRoyalty memory tokenRoyalty = tokenRoyalties[_owner];
+        uint16 tokenRoyalty = tokenRoyalties[_seller];
 
-        if (minter != address(0) && tokenRoyalty.royalty != 0) {
-            uint256 royaltyFeeAmount = _calculateFeeAmount(price, tokenRoyalty.royalty);
-            tokenRoyalty.royaltyBalance += royaltyFeeAmount;
+        if (minter != address(0) && tokenRoyalty != 0) {
+            uint256 royaltyFeeAmount = _calculateFeeAmount(_price, tokenRoyalty);
+            artongBalances[_seller].royaltyBalance += royaltyFeeAmount;
             feeAmount += royaltyFeeAmount;
         }
 
         CollectionRoyalty memory collectionRoyalty = collectionRoyalties[_nftAddress];
 
         if (minter != address(0) && collectionRoyalty.royalty != 0) {
-            uint256 collectionRoyaltyFeeAmount = _calculateFeeAmount(price,collectionRoyalty.royalty);
+            uint256 collectionRoyaltyFeeAmount = _calculateFeeAmount(_price, collectionRoyalty.royalty);
             collectionRoyalty.royaltyBalance += collectionRoyaltyFeeAmount;
             feeAmount += collectionRoyaltyFeeAmount;
         }
 
         // Send sold amount to seller(extract fee) TODO] ArtongNFT case / external NFT case
-        IArtongNFT(_nftAddress).setPendingWithdrawal{value: price - feeAmount}(_owner);
+        IArtongNFT(_nftAddress).setPendingWithdrawal{value: _price - feeAmount}(_seller);
 
         // Transfer NFT to buyer
         if (_isNFTValid(_nftAddress)) {
-            IERC721(_nftAddress).safeTransferFrom(_owner, msg.sender, _tokenId);
+            IERC721(_nftAddress).safeTransferFrom(_seller, _buyer, _tokenId);
         }
 
-        if (msg.value > price) {
-            (bool success2,) = msg.sender.call{value : msg.value - price}("");
+        if (payAmount > _price) {
+            (bool success2,) = _buyer.call{value: payAmount - _price}("");
             if (!success2) { // TODO] revert 처리 하는게 나을까?
-                pendingWithdrawals[msg.sender] += msg.value - price;
+                artongBalances[_buyer].etcBalance += payAmount - _price;
             }
         }
 
         emit ItemSold(
-            _owner,
-            msg.sender,
+            _seller,
+            _buyer,
             _nftAddress,
             _tokenId,
-            price
+            _price
         );
 
         delete (listingPrices[_nftAddress][_tokenId]);
     }
 
+    /// @notice Method for offering item
+    /// @param _nftAddress NFT contract address
+    /// @param _tokenId TokenId
+    function createOffer(
+        address _nftAddress,
+        uint256 _tokenId,
+        uint256 _deadline
+    ) external payable offerNotExists(_nftAddress, _tokenId, msg.sender) {
+        require(msg.value > 0.001 ether, "offer amount too small");
+        require(_isNFTValid(_nftAddress), "invalid nft address");
+        IERC721 nft = IERC721(_nftAddress);
+        require(msg.sender != nft.ownerOf(_tokenId), "cannot self offer");
+
+        if (_deadline == 0) {
+            _deadline = _getNow() - 1 days;
+        } else {
+            _deadline = _getNow() + 1 days;
+        }
+
+        offers[_nftAddress][_tokenId][msg.sender] = Offer(
+            msg.value,
+            _deadline
+        );
+
+        userOffers[msg.sender].push(Offer(
+            msg.value,
+            _deadline
+        ));
+
+        artongBalances[msg.sender].offerBalance += msg.value;
+
+        emit OfferCreated(
+            msg.sender,
+            _nftAddress,
+            _tokenId,
+            msg.value,
+            _deadline
+        );
+    }
+
+    /// @notice Method for accepting the offer
+    /// @param _nftAddress NFT contract address
+    /// @param _tokenId TokenId
+    /// @param _creator Offer creator address
+    function acceptOffer(
+        address _nftAddress,
+        uint256 _tokenId,
+        address _creator
+    )
+        external
+        nonReentrant
+        offerExists(_nftAddress, _tokenId, _creator)
+    {
+        _isValidOwner(_nftAddress, _tokenId, msg.sender);
+
+        Offer memory offer = offers[_nftAddress][_tokenId][_creator];
+
+        uint256 moment = _getNow();
+        uint256 offerBalance = _getOfferBalance(moment, _creator);
+        require(offerBalance >= offer.price, "balance not enough to buy item");
+
+        address seller = msg.sender;
+        address buyer = _creator;
+        _buyItem(_nftAddress, _tokenId, seller, buyer, offer.price, offer.price);
+
+        emit OfferAccepted(_nftAddress, _tokenId, _creator);
+
+        delete (offers[_nftAddress][_tokenId][_creator]);
+    }
+
     function withdraw() public {
-        uint256 amount = pendingWithdrawals[msg.sender];
+        uint256 moment = _getNow();
+        uint256 amount = getArtongBalance(moment);
         require(amount != 0, "nothing to withdraw");
         require(address(this).balance >= amount, "balance not enough to withdraw");
-        
+
+        ArtongBalance memory artongBalance = artongBalances[msg.sender];
+        artongBalance.offerBalance = artongBalance.offerBalance - _getOfferBalance(moment, msg.sender);
+        artongBalance.royaltyBalance = 0;
+        artongBalance.etcBalance = 0;
+
+        _deleteOldUserOffers(moment);
+
         address payable receiver = payable(msg.sender);
-        pendingWithdrawals[msg.sender] = 0;
         receiver.transfer(amount);
+    }
+
+    function getArtongBalance(uint256 moment) public view returns (uint256) {
+        return _getOfferBalance(moment, msg.sender) + _getRoyaltyBalance() + _getEtcBalance();
+    }
+
+    function _getOfferBalance(uint256 moment, address user) private view returns (uint256) {
+        Offer[] memory userOffer = userOffers[user];
+        uint256 offerBalance = 0;
+        for (uint256 i = 0; i < userOffer.length; i++) {
+            if (userOffer[i].deadline > moment) {
+                offerBalance += userOffer[i].price;
+            }
+        }
+        return offerBalance;
+    }
+
+    function _getRoyaltyBalance() private view returns (uint256) {
+        ArtongBalance memory artongBalance = artongBalances[msg.sender];
+        return artongBalance.royaltyBalance;
+    }
+
+    function _getEtcBalance() private view returns (uint256) {
+        ArtongBalance memory artongBalance = artongBalances[msg.sender];
+        return artongBalance.etcBalance;
+    }
+
+    function _deleteOldUserOffers(uint256 moment) private {
+        Offer[] storage userOffer = userOffers[msg.sender];
+        for (uint256 i = 0; i < userOffer.length; i++) {
+            if (userOffer[i].deadline < moment) {
+                userOffer[i] = userOffer[userOffer.length - 1];
+                userOffer.pop();
+            }
+        }
     }
 
     function _calculateFeeAmount(uint256 price, uint16 fee) private pure returns (uint256) {
@@ -307,14 +437,14 @@ contract ArtongMarketplace is
         emit ItemCanceled(_owner, _nftAddress, _tokenId);
     }
 
-    function _isOwnerValid(
+    function _isValidOwner(
         address _nftAddress,
         uint256 _tokenId,
-        address _owner
+        address target
     ) internal view {
         if (_isNFTValid(_nftAddress)) {
             IERC721 nft = IERC721(_nftAddress);
-            require(nft.ownerOf(_tokenId) == _owner, "not owning item");
+            require(target == nft.ownerOf(_tokenId), "not owning item");
         } else {
             revert("invalid nft address");
         }
