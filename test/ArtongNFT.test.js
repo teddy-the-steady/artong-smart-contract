@@ -21,22 +21,28 @@ const sampleUri = 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55
 describe('ArtongNFT', function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
+    this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
   });
 
   beforeEach(async function () {
-    const [owner, feeReciever, marketplace, randomUser1, randomUser2, _] = await ethers.getSigners();
+    const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
+    const marketplace = await upgrades.deployProxy(
+      this.ArtongMarketplace,
+      [platformFee, feeReceipient.address],
+      { initializer: 'initialize' }
+    );
     const artongNft = await this.ArtongNFT.deploy(
       name,
       symbol,
       marketplace.address,
       platformFee,
-      feeReciever.address,
+      feeReceipient.address,
       maxAmount,
       policy
     );
 
     this.owner = owner;
-    this.feeReciever = feeReciever;
+    this.feeReceipient = feeReceipient;
     this.marketplace = marketplace;
     this.randomUser1 = randomUser1;
     this.randomUser2 = randomUser2;
@@ -136,35 +142,6 @@ describe('ArtongNFT', function() {
         });
       });
 
-      describe('whitelisted marketplace', function() {
-        it('Should be able to pause', async function() {
-          await expect(this.artongNft.connect(this.marketplace).pause())
-            .to.emit(this.artongNft, 'Paused')
-            .withArgs(this.marketplace.address);
-        });
-    
-        it('Should be able to burn a token', async function() {
-          await expect(this.artongNft.connect(this.marketplace).burn(firstTokenId))
-            .to.emit(this.artongNft, 'Transfer')
-            .withArgs(this.randomUser1.address, zeroAddress, firstTokenId);
-        });
-
-        it('Should be able to set paused = true', async function() {
-          await expect(this.artongNft.connect(this.marketplace).pause())
-            .to.emit(this.artongNft, 'Paused')
-            .withArgs(this.marketplace.address);
-        });
-
-        context('when paused = true', function() {
-          it('Should fail to mint', async function() {
-            await this.artongNft.connect(this.marketplace).pause();
-
-            await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
-              .to.be.revertedWith("Pausable: paused");
-          });
-        });
-      });
-
       describe('random user', function() {
         it('Should fail to pause contract', async function() {
           await expect(this.artongNft.connect(this.randomUser1).pause())
@@ -194,7 +171,7 @@ describe('ArtongNFT', function() {
   
         context('when the given address does not own any tokens', function () {
           it('Should return 0', async function () {
-            expect(await this.artongNft.balanceOf(this.feeReciever.address)).to.equal(0);
+            expect(await this.artongNft.balanceOf(this.feeReceipient.address)).to.equal(0);
           });
         });
   
@@ -227,16 +204,22 @@ describe('ArtongNFT', function() {
 describe('ArtongNFT Lazy minting', function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
+    this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
   });
 
   beforeEach(async function () {
-    const [owner, minter, marketplace, redeemer, feeReciever, randomUser, _] = await ethers.getSigners();
+    const [owner, minter, redeemer, feeReceipient, randomUser, _] = await ethers.getSigners();
+    const marketplace = await upgrades.deployProxy(
+      this.ArtongMarketplace,
+      [platformFee, feeReceipient.address],
+      { initializer: 'initialize' }
+    );
     const artongNft = await this.ArtongNFT.deploy(
       name,
       symbol,
       marketplace.address,
       platformFee,
-      feeReciever.address,
+      feeReceipient.address,
       maxAmount,
       policy
     );
@@ -250,7 +233,7 @@ describe('ArtongNFT Lazy minting', function() {
     this.minter = minter;
     this.marketplace = marketplace;
     this.redeemer = redeemer;
-    this.feeReciever = feeReciever;
+    this.feeReceipient = feeReceipient;
     this.artongNft = artongNft;
     this.randomUser = randomUser;
     this.redeemerContract = redeemerContract;
@@ -308,7 +291,7 @@ describe('ArtongNFT Lazy minting', function() {
 
     await expect(await this.redeemerContract.redeem(this.redeemer.address, voucher, { value: price }))
       .to.changeEtherBalances(
-        [this.redeemer, this.artongNft, this.feeReciever],
+        [this.redeemer, this.artongNft, this.feeReceipient],
         [price.mul(-1), price * (10000 - platformFee) / 10000, price * platformFee / 10000]
       );
 
