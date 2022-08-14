@@ -9,6 +9,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface IArtongNFT {
     function setPendingWithdrawal(address) external payable;
+
+    function owner() external view returns (address);
 }
 
 contract ArtongMarketplace is
@@ -54,6 +56,15 @@ contract ArtongMarketplace is
     );
     event UpdatePlatformFee(uint16 platformFee);
     event UpdatePlatformFeeRecipient(address payable platformFeeRecipient);
+    event UpdateTokenRoyalty(
+        address indexed tokenOwner,
+        uint16 royalty
+    );
+    event UpdateCollectionRoyalty(
+        address indexed collectionOwner,
+        address indexed nft,
+        uint16 royalty
+    );
 
     struct Offer {
         uint256 price;
@@ -245,6 +256,7 @@ contract ArtongMarketplace is
         internal
     {
         require(payAmount >= _price, "payment amount not enough");
+        require(_isNFTValid(_nftAddress), "invalid nft address");
 
         uint256 feeAmount = _calculateFeeAmount(_price, platformFee);
 
@@ -272,9 +284,7 @@ contract ArtongMarketplace is
         IArtongNFT(_nftAddress).setPendingWithdrawal{value: _price - feeAmount}(_seller);
 
         // Transfer NFT to buyer
-        if (_isNFTValid(_nftAddress)) {
-            IERC721(_nftAddress).safeTransferFrom(_seller, _buyer, _tokenId);
-        }
+        IERC721(_nftAddress).safeTransferFrom(_seller, _buyer, _tokenId);
 
         if (payAmount > _price) {
             (bool success2,) = _buyer.call{value: payAmount - _price}("");
@@ -362,6 +372,40 @@ contract ArtongMarketplace is
         emit OfferAccepted(_nftAddress, _tokenId, _creator);
 
         delete (offers[_nftAddress][_tokenId][_creator]);
+    }
+
+    /// @notice Method for setting royalty
+    /// @param _royalty Royalty
+    function updateTokenRoyalty(uint16 _royalty) external {
+        require(_royalty <= 10000, "invalid royalty");
+        tokenRoyalties[msg.sender] = _royalty;
+
+        emit UpdateTokenRoyalty(msg.sender, _royalty);
+    }
+
+    /// @notice Method for setting royalty
+    /// @param _nftAddress NFT contract address
+    /// @param _royalty Royalty
+    function updateCollectionRoyalty(
+        address _nftAddress,
+        uint16 _royalty
+    ) external {
+        require(_royalty <= 10000, "invalid royalty");
+        require(_isNFTValid(_nftAddress), "invalid nft address");
+
+        IArtongNFT nft = IArtongNFT(_nftAddress);
+        require(
+            msg.sender == nft.owner(),
+            "user not approved for this item"
+        );
+
+        CollectionRoyalty memory collectionRoyalty = collectionRoyalties[_nftAddress];
+        collectionRoyalties[_nftAddress] = CollectionRoyalty(
+            _royalty,
+            collectionRoyalty.royaltyBalance
+        );
+
+        emit UpdateCollectionRoyalty(msg.sender, _nftAddress, _royalty);
     }
 
     /// @notice Method for updating platform fee
