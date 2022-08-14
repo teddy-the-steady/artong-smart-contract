@@ -10,6 +10,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
+interface IArtongMarketplace {
+    function registerMinter(address _minter, address _nftAddress, uint256 _tokenId) external;
+}
+
 contract ArtongNFT is
     ERC721URIStorage,
     EIP712,
@@ -179,6 +183,9 @@ contract ArtongNFT is
     function _doMint(address _to, string calldata _tokenUri) private checkMaxAmount returns (uint256) {
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
+
+        IArtongMarketplace(marketplace).registerMinter(_to, address(this), newTokenId);
+
         _mint(_to, newTokenId);
         _setTokenURI(newTokenId, _tokenUri);
 

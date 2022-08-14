@@ -87,7 +87,7 @@ contract ArtongMarketplace is
     address payable public feeReceipient;
 
     /// @notice NftAddress -> Token ID -> Listing item price
-    mapping(address => mapping(uint256 => uint256)) public listingPrices;
+    mapping(address => mapping(uint256 => uint256)) listingPrices;
 
     /// @notice NftAddress -> Token ID -> Offerer -> Offer
     mapping(address => mapping(uint256 => mapping(address => Offer)))
@@ -97,10 +97,13 @@ contract ArtongMarketplace is
     mapping(address => Offer[]) public userOffers;
 
     /// @notice NftAddress -> CollectionRoyalty
-    mapping(address => CollectionRoyalty) public collectionRoyalties;
+    mapping(address => CollectionRoyalty) collectionRoyalties;
 
     /// @notice Minter -> Token royalty // 2 decimals(525->5.25)
-    mapping(address => uint16) public tokenRoyalties;
+    mapping(address => uint16) tokenRoyalties;
+
+    /// @notice NftAddress -> Token ID -> Minter
+    mapping(address => mapping(uint256 => address)) minters;
 
     /// @notice User Artong Balance
     mapping(address => ArtongBalance) artongBalances;
@@ -162,10 +165,6 @@ contract ArtongMarketplace is
         __ReentrancyGuard_init();
     }
 
-    /// @notice Method for listing NFT
-    /// @param _nftAddress Address of NFT contract
-    /// @param _tokenId Token ID of NFT
-    /// @param _price sale price
     function listItem(
         address _nftAddress,
         uint256 _tokenId,
@@ -193,7 +192,6 @@ contract ArtongMarketplace is
         );
     }
 
-    /// @notice Method for canceling listed NFT
     function cancelListing(address _nftAddress, uint256 _tokenId)
         external
         nonReentrant
@@ -203,10 +201,6 @@ contract ArtongMarketplace is
         _cancelListing(_nftAddress, _tokenId, msg.sender);
     }
 
-    /// @notice Method for updating listed NFT
-    /// @param _nftAddress Address of NFT contract
-    /// @param _tokenId Token ID of NFT
-    /// @param _newPrice New sale price
     function updateListing(address _nftAddress, uint256 _tokenId, uint256 _newPrice)
         external
         nonReentrant
@@ -222,10 +216,6 @@ contract ArtongMarketplace is
         );
     }
 
-    /// @notice Method for buying listed NFT
-    /// @param _nftAddress NFT contract address
-    /// @param _tokenId TokenId
-    /// @param _owner Token owner
     function buyItem(
         address _nftAddress,
         uint256 _tokenId,
@@ -258,17 +248,22 @@ contract ArtongMarketplace is
         require(payAmount >= _price, "payment amount not enough");
         require(_isNFTValid(_nftAddress), "invalid nft address");
 
+        if (payAmount > _price) {
+            (bool success,) = _buyer.call{value: payAmount - _price}("");
+            require(success, "Over paid amount transfer failed");
+        }
+
         uint256 feeAmount = _calculateFeeAmount(_price, platformFee);
 
-        // Send fee to feeReceipient
-        (bool success,) = feeReceipient.call{value : feeAmount}("");
-        require(success, "Fee transfer failed");
+        (bool success2,) = feeReceipient.call{value : feeAmount}("");
+        require(success2, "Fee transfer failed");
 
-        uint16 tokenRoyalty = tokenRoyalties[_seller];
+        address minter = minters[_nftAddress][_tokenId];
+        uint16 tokenRoyalty = tokenRoyalties[minter];
 
         if (tokenRoyalty != 0) {
             uint256 royaltyFeeAmount = _calculateFeeAmount(_price, tokenRoyalty);
-            artongBalances[_seller].royaltyBalance += royaltyFeeAmount;
+            artongBalances[minter].royaltyBalance += royaltyFeeAmount;
             feeAmount += royaltyFeeAmount;
         }
 
@@ -277,6 +272,10 @@ contract ArtongMarketplace is
         if (collectionRoyalty.royalty != 0) {
             uint256 collectionRoyaltyFeeAmount = _calculateFeeAmount(_price, collectionRoyalty.royalty);
             collectionRoyalty.royaltyBalance += collectionRoyaltyFeeAmount;
+            collectionRoyalties[_nftAddress] = CollectionRoyalty(
+                collectionRoyalty.royalty,
+                collectionRoyalty.royaltyBalance
+            );
             feeAmount += collectionRoyaltyFeeAmount;
         }
 
@@ -285,13 +284,6 @@ contract ArtongMarketplace is
 
         // Transfer NFT to buyer
         IERC721(_nftAddress).safeTransferFrom(_seller, _buyer, _tokenId);
-
-        if (payAmount > _price) {
-            (bool success2,) = _buyer.call{value: payAmount - _price}("");
-            if (!success2) { // TODO] revert 처리 하는게 나을까?
-                artongBalances[_buyer].etcBalance += payAmount - _price;
-            }
-        }
 
         emit ItemSold(
             _seller,
@@ -304,9 +296,6 @@ contract ArtongMarketplace is
         delete (listingPrices[_nftAddress][_tokenId]);
     }
 
-    /// @notice Method for offering item
-    /// @param _nftAddress NFT contract address
-    /// @param _tokenId TokenId
     function createOffer(
         address _nftAddress,
         uint256 _tokenId,
@@ -345,8 +334,6 @@ contract ArtongMarketplace is
     }
 
     /// @notice Method for accepting the offer
-    /// @param _nftAddress NFT contract address
-    /// @param _tokenId TokenId
     /// @param _creator Offer creator address
     function acceptOffer(
         address _nftAddress,
@@ -362,7 +349,7 @@ contract ArtongMarketplace is
         Offer memory offer = offers[_nftAddress][_tokenId][_creator];
 
         uint256 moment = _getNow();
-        uint256 offerBalance = _getOfferBalance(moment, _creator);
+        uint256 offerBalance = getOfferBalance(moment, _creator);
         require(offerBalance >= offer.price, "balance not enough to buy item");
 
         address seller = msg.sender;
@@ -374,8 +361,15 @@ contract ArtongMarketplace is
         delete (offers[_nftAddress][_tokenId][_creator]);
     }
 
-    /// @notice Method for setting royalty
-    /// @param _royalty Royalty
+    function registerMinter(
+        address _minter,
+        address _nftAddress,
+        uint256 _tokenId
+    ) external {
+        require(minters[_nftAddress][_tokenId] == address(0), "minter already registered");
+        minters[_nftAddress][_tokenId] = _minter;
+    }
+
     function updateTokenRoyalty(uint16 _royalty) external {
         require(_royalty <= 10000, "invalid royalty");
         tokenRoyalties[msg.sender] = _royalty;
@@ -383,9 +377,6 @@ contract ArtongMarketplace is
         emit UpdateTokenRoyalty(msg.sender, _royalty);
     }
 
-    /// @notice Method for setting royalty
-    /// @param _nftAddress NFT contract address
-    /// @param _royalty Royalty
     function updateCollectionRoyalty(
         address _nftAddress,
         uint16 _royalty
@@ -408,17 +399,11 @@ contract ArtongMarketplace is
         emit UpdateCollectionRoyalty(msg.sender, _nftAddress, _royalty);
     }
 
-    /// @notice Method for updating platform fee
-    /// @dev Only admin
-    /// @param _platformFee uint16 the platform fee to set
     function updatePlatformFee(uint16 _platformFee) external onlyOwner {
         platformFee = _platformFee;
         emit UpdatePlatformFee(_platformFee);
     }
 
-    /// @notice Method for updating platform fee address
-    /// @dev Only admin
-    /// @param _platformFeeRecipient payable address the address to sends the funds to
     function updatePlatformFeeRecipient(address payable _platformFeeRecipient)
         external
         onlyOwner
@@ -434,7 +419,7 @@ contract ArtongMarketplace is
         require(address(this).balance >= amount, "balance not enough to withdraw");
 
         ArtongBalance memory artongBalance = artongBalances[msg.sender];
-        artongBalance.offerBalance = artongBalance.offerBalance - _getOfferBalance(moment, msg.sender);
+        artongBalance.offerBalance = artongBalance.offerBalance - getOfferBalance(moment, msg.sender);
         artongBalance.royaltyBalance = 0;
         artongBalance.etcBalance = 0;
 
@@ -443,44 +428,46 @@ contract ArtongMarketplace is
         address payable receiver = payable(msg.sender);
         receiver.transfer(amount);
     }
-
-    function getArtongBalance(uint256 moment) public view returns (uint256) {
-        return _getOfferBalance(moment, msg.sender) + _getRoyaltyBalance() + _getEtcBalance();
+    
+    function getCollectionRoyalty(address _nftAddress) external view returns (CollectionRoyalty memory) {
+        return collectionRoyalties[_nftAddress];
     }
 
-    function _getOfferBalance(uint256 moment, address user) private view returns (uint256) {
+    function getArtongBalance(uint256 _moment) public view returns (uint256) {
+        return getOfferBalance(_moment, msg.sender) + getRoyaltyBalance() + getEtcBalance();
+    }
+
+    function getOfferBalance(uint256 _moment, address user) public view returns (uint256) {
         Offer[] memory userOffer = userOffers[user];
         uint256 offerBalance = 0;
         for (uint256 i = 0; i < userOffer.length; i++) {
-            if (userOffer[i].deadline > moment) {
+            if (userOffer[i].deadline > _moment) {
                 offerBalance += userOffer[i].price;
             }
         }
         return offerBalance;
     }
 
-    function _getRoyaltyBalance() private view returns (uint256) {
-        ArtongBalance memory artongBalance = artongBalances[msg.sender];
-        return artongBalance.royaltyBalance;
+    function getRoyaltyBalance() public view returns (uint256) {
+        return artongBalances[msg.sender].royaltyBalance;
     }
 
-    function _getEtcBalance() private view returns (uint256) {
-        ArtongBalance memory artongBalance = artongBalances[msg.sender];
-        return artongBalance.etcBalance;
+    function getEtcBalance() public view returns (uint256) {
+        return artongBalances[msg.sender].etcBalance;
     }
 
-    function _deleteOldUserOffers(uint256 moment) private {
+    function _deleteOldUserOffers(uint256 _moment) private {
         Offer[] storage userOffer = userOffers[msg.sender];
         for (uint256 i = 0; i < userOffer.length; i++) {
-            if (userOffer[i].deadline < moment) {
+            if (userOffer[i].deadline < _moment) {
                 userOffer[i] = userOffer[userOffer.length - 1];
                 userOffer.pop();
             }
         }
     }
 
-    function _calculateFeeAmount(uint256 price, uint16 fee) private pure returns (uint256) {
-        return price * fee / 10000;
+    function _calculateFeeAmount(uint256 _price, uint16 _fee) private pure returns (uint256) {
+        return _price * _fee / 10000;
     }
 
     function _getNow() internal view virtual returns (uint256) {
