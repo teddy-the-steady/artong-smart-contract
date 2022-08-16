@@ -25,6 +25,19 @@
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_user",
+          "type": "address"
+        }
+      ],
+      "name": "sendArtongBalance",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
     }
   ],
   "bytecode": "0x",

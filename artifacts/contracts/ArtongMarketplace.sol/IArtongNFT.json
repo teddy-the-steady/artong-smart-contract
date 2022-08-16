@@ -15,19 +15,6 @@
       ],
       "stateMutability": "view",
       "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "setPendingWithdrawal",
-      "outputs": [],
-      "stateMutability": "payable",
-      "type": "function"
     }
   ],
   "bytecode": "0x",
