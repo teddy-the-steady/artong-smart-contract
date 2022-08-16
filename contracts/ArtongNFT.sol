@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "./Enums.sol";
 
 interface IArtongMarketplace {
     function registerMinter(address _minter, address _nftAddress, uint256 _tokenId) external;
@@ -38,10 +39,6 @@ contract ArtongNFT is
 
     /// @notice Immediate(default): mint or lazy mint. burnable by owner
     /// @notice Approved: Only lazy mint. content will stay hidden until owner opens it
-    enum Policy {
-        Immediate,
-        Approved
-    }
     Policy public policy;
 
     address public marketplace;
