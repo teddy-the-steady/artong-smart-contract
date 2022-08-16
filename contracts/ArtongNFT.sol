@@ -93,15 +93,15 @@ contract ArtongNFT is
         require(signer == voucher.creator, "Signature invalid");
         require(msg.value >= voucher.minPrice, "Insufficient funds to redeem");
 
+        uint256 feeAmount = _calculatePlatformFeeAmount();
+
+        (bool success,) = feeReceipient.call{value : feeAmount}("");
+        require(success, "Transfer failed");
+
         uint256 newTokenId = _doMint(voucher.creator, voucher.uri);
         _transfer(voucher.creator, redeemer, newTokenId);
 
-        uint256 feeAmount = _calculatePlatformFeeAmount();
-
         pendingWithdrawals[signer] += msg.value - feeAmount;
-
-        (bool success,) = feeReceipient.call{value : feeAmount}("");
-        require(success, "Transfer failed"); // TODO] 실패해도 revert 안하는 방향으로? reentrancy attack safe?
 
         return newTokenId;
     }

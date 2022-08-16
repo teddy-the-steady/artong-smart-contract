@@ -350,7 +350,7 @@ contract ArtongMarketplace is
 
         uint256 moment = _getNow();
         uint256 offerBalance = getOfferBalance(moment, _creator);
-        require(offerBalance >= offer.price, "balance not enough to buy item");
+        require(offerBalance >= offer.price, "offer balance not enough to buy item");
 
         address seller = msg.sender;
         address buyer = _creator;
@@ -426,7 +426,9 @@ contract ArtongMarketplace is
         _deleteOldUserOffers(moment);
 
         address payable receiver = payable(msg.sender);
-        receiver.transfer(amount);
+
+        (bool success,) = receiver.call{value: amount}("");
+        require(success, "Artong balance transfer failed");
     }
     
     function getCollectionRoyalty(address _nftAddress) external view returns (CollectionRoyalty memory) {
