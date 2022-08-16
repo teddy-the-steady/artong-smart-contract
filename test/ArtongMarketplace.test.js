@@ -376,6 +376,9 @@ describe('ArtongMarketplace', function() {
 
             await expect(await this.marketplace.connect(this.randomUser1).getRoyaltyBalance())
               .to.equal((price * 300 / 10000) + (newPrice * 300 / 10000));
+
+            await expect((await this.marketplace.getCollectionRoyalty(this.nft.address))[1])
+              .to.be.equal((price * 250 / 10000) + (newPrice * 250 / 10000));
           });
         });
       });
