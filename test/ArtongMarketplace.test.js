@@ -296,18 +296,19 @@ describe('ArtongMarketplace', function() {
               price
             )
             .to.changeEtherBalances(
-              [this.randomUser2, this.nft, this.feeReceipient],
+              [this.randomUser2, this.feeReceipient],
               [
                 price.mul(-1),
-                price * (10000 - platformFee) / 10000,
                 price * platformFee / 10000
               ]
             );
 
-            await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
+            await expect(await this.marketplace.getArtongBalance(
+              parseInt(new Date().getTime() / 1000),
+              this.randomUser1.address
+            )).to.equal(price * (10000 - platformFee) / 10000);
 
-            expect(await this.nft.connect(this.randomUser1).getWithdrawal())
-              .to.equal(price * (10000 - platformFee) / 10000);
+            await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
         });
 
         context('when tokenRoyalty, collectionRoyalty exsists', function() {
@@ -331,16 +332,17 @@ describe('ArtongMarketplace', function() {
                 price
               )
               .to.changeEtherBalances(
-                [this.randomUser2, this.nft, this.feeReceipient],
+                [this.randomUser2, this.feeReceipient],
                 [
                   price.mul(-1),
-                  price * (10000 - platformFee - 300 - 250) / 10000,
                   price * platformFee / 10000
                 ]
               );
 
-            await expect(await this.marketplace.connect(this.randomUser1).getRoyaltyBalance())
-              .to.equal(price * 300 / 10000);
+            await expect(await this.marketplace.getArtongBalance(
+              parseInt(new Date().getTime() / 1000),
+              this.randomUser1.address
+            )).to.equal(price * (10000 - platformFee - 250) / 10000);
 
             await expect((await this.marketplace.getCollectionRoyalty(this.nft.address))[1])
               .to.be.equal(price * 250 / 10000);
@@ -366,16 +368,20 @@ describe('ArtongMarketplace', function() {
                 newPrice
               )
               .to.changeEtherBalances(
-                [this.owner, this.nft, this.feeReceipient],
+                [this.owner, this.feeReceipient],
                 [
                   newPrice.mul(-1),
-                  newPrice * (10000 - platformFee - 300 - 250) / 10000,
                   newPrice * platformFee / 10000
                 ]
               );
 
-            await expect(await this.marketplace.connect(this.randomUser1).getRoyaltyBalance())
-              .to.equal((price * 300 / 10000) + (newPrice * 300 / 10000));
+            await expect(await this.marketplace.getArtongBalance(
+              parseInt(new Date().getTime() / 1000),
+              this.randomUser1.address
+            )).to.equal(
+              price * (10000 - platformFee - 250) / 10000 +
+              newPrice * 300 / 10000
+            );
 
             await expect((await this.marketplace.getCollectionRoyalty(this.nft.address))[1])
               .to.be.equal((price * 250 / 10000) + (newPrice * 250 / 10000));
@@ -401,18 +407,24 @@ describe('ArtongMarketplace', function() {
               price
             )
             .to.changeEtherBalances(
-              [this.randomUser2, this.nft, this.feeReceipient],
+              [this.randomUser2, this.feeReceipient],
               [
-                price.mul(-1),
-                price * (10000 - platformFee) / 10000,
+                price.add(ethers.utils.parseEther('0.0003')).mul(-1),
                 price * platformFee / 10000
               ]
             );
 
-            await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
+            await expect(await this.marketplace.getArtongBalance(
+              parseInt(new Date().getTime() / 1000),
+              this.randomUser2.address
+            )).to.equal(ethers.utils.parseEther('0.0003'));
 
-            expect(await this.nft.connect(this.randomUser1).getWithdrawal())
-              .to.equal(price * (10000 - platformFee) / 10000);
+            await expect(await this.marketplace.getArtongBalance(
+              parseInt(new Date().getTime() / 1000),
+              this.randomUser1.address
+            )).to.equal(price * (10000 - platformFee) / 10000);
+
+            await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
         });
       });
     });
@@ -518,6 +530,11 @@ describe('ArtongMarketplace', function() {
 
       it('Should successfully accept offer and sell item', async function() {
         await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser1.address);
+
+        await expect(await this.marketplace.getArtongBalance(
+          parseInt(new Date().getTime() / 1000),
+          this.randomUser1.address
+        )).to.equal(0);
         
         await expect(await this.marketplace.connect(this.randomUser1).acceptOffer(
           this.nft.address,
@@ -530,14 +547,16 @@ describe('ArtongMarketplace', function() {
             this.randomUser2.address,
           )
           .to.changeEtherBalances(
-            [this.randomUser2, this.nft, this.feeReceipient],
-            [0, offerPrice * (10000 - platformFee) / 10000, offerPrice * platformFee / 10000]
+            [this.randomUser2, this.feeReceipient],
+            [0, offerPrice * platformFee / 10000]
           );
 
-        await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
+        await expect(await this.marketplace.getArtongBalance(
+          parseInt(new Date().getTime() / 1000),
+          this.randomUser1.address
+        )).to.equal(offerPrice * (10000 - platformFee) / 10000);
 
-        expect(await this.nft.connect(this.randomUser1).getWithdrawal())
-          .to.equal(offerPrice * (10000 - platformFee) / 10000);
+        await expect(await this.nft.ownerOf(firstTokenId)).to.equal(this.randomUser2.address);
       });
     });
   });

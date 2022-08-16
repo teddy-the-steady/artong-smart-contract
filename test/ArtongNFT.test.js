@@ -291,16 +291,13 @@ describe('ArtongNFT Lazy minting', function() {
 
     await expect(await this.redeemerContract.redeem(this.redeemer.address, voucher, { value: price }))
       .to.changeEtherBalances(
-        [this.redeemer, this.artongNft, this.feeReceipient],
-        [price.mul(-1), price * (10000 - platformFee) / 10000, price * platformFee / 10000]
+        [this.redeemer, this.feeReceipient],
+        [price.mul(-1), price * platformFee / 10000]
       );
 
-    expect(await this.artongNft.connect(this.minter).getWithdrawal())
-      .to.equal(price * (10000 - platformFee) / 10000);
-
-    await expect(await this.artongNft.connect(this.minter).withdraw())
-      .to.changeEtherBalance(this.minter, price * (10000 - platformFee) / 10000);
-
-    expect(await this.artongNft.connect(this.minter).getWithdrawal()).to.equal(0);
+    await expect(await this.marketplace.getArtongBalance(
+      parseInt(new Date().getTime() / 1000),
+      this.minter.address
+    )).to.equal(price * (10000 - platformFee) / 10000);
   });
 });
