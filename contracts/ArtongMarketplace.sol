@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface IArtongNFT {
-    function setPendingWithdrawal(address) external payable;
-
     function owner() external view returns (address);
 }
 
@@ -76,12 +74,6 @@ contract ArtongMarketplace is
         uint256 royaltyBalance;
     }
 
-    struct ArtongBalance {
-        uint256 offerBalance;
-        uint256 royaltyBalance;
-        uint256 etcBalance;
-    }
-
     uint16 public platformFee; // 2 decimals(525->5.25)
 
     address payable public feeReceipient;
@@ -106,7 +98,7 @@ contract ArtongMarketplace is
     mapping(address => mapping(uint256 => address)) minters;
 
     /// @notice User Artong Balance
-    mapping(address => ArtongBalance) artongBalances;
+    mapping(address => uint256) artongBalances;
 
     modifier isListed(
         address _nftAddress,
@@ -248,22 +240,21 @@ contract ArtongMarketplace is
         require(payAmount >= _price, "payment amount not enough");
         require(_isNFTValid(_nftAddress), "invalid nft address");
 
-        if (payAmount > _price) {
-            (bool success,) = _buyer.call{value: payAmount - _price}("");
-            require(success, "Over paid amount transfer failed");
-        }
-
         uint256 feeAmount = _calculateFeeAmount(_price, platformFee);
 
-        (bool success2,) = feeReceipient.call{value : feeAmount}("");
-        require(success2, "Fee transfer failed");
+        (bool success,) = feeReceipient.call{value : feeAmount}("");
+        require(success, "Fee transfer failed");
+
+        if (payAmount > _price) {
+            artongBalances[_buyer] += payAmount - _price;
+        }
 
         address minter = minters[_nftAddress][_tokenId];
         uint16 tokenRoyalty = tokenRoyalties[minter];
 
         if (tokenRoyalty != 0) {
             uint256 royaltyFeeAmount = _calculateFeeAmount(_price, tokenRoyalty);
-            artongBalances[minter].royaltyBalance += royaltyFeeAmount;
+            artongBalances[minter] += royaltyFeeAmount;
             feeAmount += royaltyFeeAmount;
         }
 
@@ -279,8 +270,8 @@ contract ArtongMarketplace is
             feeAmount += collectionRoyaltyFeeAmount;
         }
 
-        // Send sold amount to seller(extract fee) TODO] ArtongNFT case / external NFT case
-        IArtongNFT(_nftAddress).setPendingWithdrawal{value: _price - feeAmount}(_seller);
+        // Send sold amount to seller(extract fee)
+        artongBalances[_seller] += _price - feeAmount;
 
         // Transfer NFT to buyer
         IERC721(_nftAddress).safeTransferFrom(_seller, _buyer, _tokenId);
@@ -322,7 +313,7 @@ contract ArtongMarketplace is
             _deadline
         ));
 
-        artongBalances[msg.sender].offerBalance += msg.value;
+        artongBalances[msg.sender] += msg.value;
 
         emit OfferCreated(
             msg.sender,
@@ -348,9 +339,11 @@ contract ArtongMarketplace is
 
         Offer memory offer = offers[_nftAddress][_tokenId][_creator];
 
-        uint256 moment = _getNow();
-        uint256 offerBalance = getOfferBalance(moment, _creator);
-        require(offerBalance >= offer.price, "offer balance not enough to buy item");
+        uint256 offerBalance = getOfferBalance(_getNow(), _creator);
+        require(
+            offerBalance >= offer.price,
+            "balance not enough to buy item"
+        );
 
         address seller = msg.sender;
         address buyer = _creator;
@@ -358,7 +351,8 @@ contract ArtongMarketplace is
 
         emit OfferAccepted(_nftAddress, _tokenId, _creator);
 
-        delete (offers[_nftAddress][_tokenId][_creator]);
+        delete (offer);
+        _deleteSoldUserOffer(offer);
     }
 
     function registerMinter(
@@ -414,20 +408,17 @@ contract ArtongMarketplace is
 
     function withdraw() public {
         uint256 moment = _getNow();
-        uint256 amount = getArtongBalance(moment);
-        require(amount != 0, "nothing to withdraw");
-        require(address(this).balance >= amount, "balance not enough to withdraw");
+        uint256 artongBalance = getArtongBalance(moment, msg.sender);
+        require(artongBalance != 0, "nothing to withdraw");
+        require(address(this).balance >= artongBalance, "balance not enough to withdraw");
 
-        ArtongBalance memory artongBalance = artongBalances[msg.sender];
-        artongBalance.offerBalance = artongBalance.offerBalance - getOfferBalance(moment, msg.sender);
-        artongBalance.royaltyBalance = 0;
-        artongBalance.etcBalance = 0;
+        artongBalances[msg.sender] -= artongBalance;
 
         _deleteOldUserOffers(moment);
 
         address payable receiver = payable(msg.sender);
 
-        (bool success,) = receiver.call{value: amount}("");
+        (bool success,) = receiver.call{value: artongBalance}("");
         require(success, "Artong balance transfer failed");
     }
     
@@ -435,10 +426,15 @@ contract ArtongMarketplace is
         return collectionRoyalties[_nftAddress];
     }
 
-    function getArtongBalance(uint256 _moment) public view returns (uint256) {
-        return getOfferBalance(_moment, msg.sender) + getRoyaltyBalance() + getEtcBalance();
+    function getArtongBalance(uint256 _moment, address user) public view returns (uint256) {
+        return artongBalances[user] - getOfferBalance(_moment, user);
     }
 
+    function sendArtongBalance(address user) external payable {
+        artongBalances[user] += msg.value;
+    }
+
+    /// @notice Offer amounts before deadline(=alive offer amounts)
     function getOfferBalance(uint256 _moment, address user) public view returns (uint256) {
         Offer[] memory userOffer = userOffers[user];
         uint256 offerBalance = 0;
@@ -450,20 +446,23 @@ contract ArtongMarketplace is
         return offerBalance;
     }
 
-    function getRoyaltyBalance() public view returns (uint256) {
-        return artongBalances[msg.sender].royaltyBalance;
-    }
-
-    function getEtcBalance() public view returns (uint256) {
-        return artongBalances[msg.sender].etcBalance;
-    }
-
     function _deleteOldUserOffers(uint256 _moment) private {
         Offer[] storage userOffer = userOffers[msg.sender];
         for (uint256 i = 0; i < userOffer.length; i++) {
             if (userOffer[i].deadline < _moment) {
                 userOffer[i] = userOffer[userOffer.length - 1];
                 userOffer.pop();
+            }
+        }
+    }
+
+    /// @notice set deadline = 0 for sold user offer
+    function _deleteSoldUserOffer(Offer memory offer) private {
+        Offer[] storage userOffer = userOffers[msg.sender];
+        for (uint256 i = 0; i < userOffer.length; i++) {
+            if (userOffer[i].deadline == offer.deadline && userOffer[i].price == offer.price) {
+                userOffer[i].deadline = 0;
+                break;
             }
         }
     }

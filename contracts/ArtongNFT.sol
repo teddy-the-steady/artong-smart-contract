@@ -13,6 +13,8 @@ import "./Enums.sol";
 
 interface IArtongMarketplace {
     function registerMinter(address _minter, address _nftAddress, uint256 _tokenId) external;
+
+    function sendArtongBalance(address _user) external payable;
 }
 
 contract ArtongNFT is
@@ -44,9 +46,6 @@ contract ArtongNFT is
     address public marketplace;
     uint16 public platformFee; // 2 decimals(525->5.25)
     address payable public feeReceipient;
-    
-    /// @notice Creator Earnings made by selling tokens
-    mapping(address => uint256) pendingWithdrawals;
 
     modifier checkMaxAmount() {
 		require(maxAmount > tokenIdCounter.current(), "Maximum number of NFTs reached");
@@ -98,31 +97,13 @@ contract ArtongNFT is
         uint256 newTokenId = _doMint(voucher.creator, voucher.uri);
         _transfer(voucher.creator, redeemer, newTokenId);
 
-        pendingWithdrawals[signer] += msg.value - feeAmount;
+        IArtongMarketplace(marketplace).sendArtongBalance{value: msg.value - feeAmount}(signer);
 
         return newTokenId;
     }
 
-    function withdraw() public whenNotPaused {
-        uint256 amount = pendingWithdrawals[msg.sender];
-        require(amount != 0, "nothing to withdraw");
-        require(address(this).balance >= amount, "balance not enough to withdraw");
-        
-        address payable receiver = payable(msg.sender);
-        pendingWithdrawals[msg.sender] = 0;
-        receiver.transfer(amount);
-    }
-
-    function getWithdrawal() public view returns (uint256) {
-        return pendingWithdrawals[msg.sender];
-    }
-
     function setPolicy(Policy _policy) public onlyOwner {
         policy = _policy;
-    }
-
-    function setPendingWithdrawal(address minter) external payable {
-        pendingWithdrawals[minter] += msg.value;
     }
 
     /// @notice Returns the chain id of the current blockchain.
