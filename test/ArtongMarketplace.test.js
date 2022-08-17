@@ -560,4 +560,48 @@ describe('ArtongMarketplace', function() {
       });
     });
   });
+
+  describe('Withdraw artong balance', function() {
+    beforeEach(async function() {
+      await this.marketplace.connect(this.randomUser1).listItem(
+        this.nft.address,
+        firstTokenId,
+        price
+      );
+      await this.marketplace.connect(this.randomUser2).listItem(
+        this.nft.address,
+        secondTokenId,
+        price
+      );
+    });
+
+    context('when user sold an item', function() {
+      beforeEach(async function() {
+        await this.marketplace.connect(this.randomUser2).buyItem(
+          this.nft.address,
+          firstTokenId,
+          this.randomUser1.address,
+          { value: price }
+        );
+      });
+
+      it('Should have right balance', async function() {
+        await expect(await this.marketplace.getArtongBalance(
+          parseInt(new Date().getTime() / 1000),
+          this.randomUser1.address
+        )).to.equal(price * (10000 - platformFee) / 10000);
+      });
+
+      it('Should be able to withdraw balance', async function() {
+        await expect(await this.marketplace.connect(this.randomUser1).withdraw())
+          .to.changeEtherBalances(
+            [this.marketplace, this.randomUser1],
+            [
+              price.mul(-1) * (10000 - platformFee) / 10000,
+              price * (10000 - platformFee) / 10000
+            ]
+          );
+      });
+    });
+  });
 });
