@@ -26,7 +26,10 @@ async function main() {
   constants['MARKETPLACE'] = marketplace.address;
   constants['FACTORY'] = factory.address;
     
-  fs.writeFileSync('scripts/constants.js', `module.exports = ${JSON.stringify(constants, null, "\t")}`)
+  fs.writeFileSync(
+    'scripts/constants.js',
+    `module.exports = ${JSON.stringify(constants, null, "\t")}
+  `);
 }
 
 main()
