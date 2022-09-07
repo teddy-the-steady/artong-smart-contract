@@ -7,7 +7,8 @@ module.exports = {
   solidity: "0.8.9",
   networks: {
     hardhat: {
-      allowUnlimitedContractSize: true
+      allowUnlimitedContractSize: true,
+      chainId: 1337
     },
     // mainnet: {
     //   url: `https://rpcapi.fantom.network`,
