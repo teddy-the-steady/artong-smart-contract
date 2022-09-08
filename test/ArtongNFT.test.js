@@ -210,6 +210,28 @@ describe('ArtongNFT', async function() {
   });
 
   describe('factory', function() {
+    context('when name is empty', function() {
+      it('Should fail to create contract', async function() {
+        await expect(this.factory.createNFTContract(
+          '',
+          symbol,
+          maxAmount,
+          policy
+        )).to.be.revertedWith("Name is required");
+      });
+    });
+
+    context('when symbol is empty', function() {
+      it('Should fail to create contract', async function() {
+        await expect(this.factory.createNFTContract(
+          name,
+          '',
+          maxAmount,
+          policy
+        )).to.be.revertedWith("Symbol is required");
+      });
+    });
+
     context('when maxAmount is less or equal to 0', function() {
       it('Should fail to create contract', async function() {
         await expect(this.factory.createNFTContract(
