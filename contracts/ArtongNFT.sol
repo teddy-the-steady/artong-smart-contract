@@ -64,6 +64,7 @@ contract ArtongNFT is
     ERC721(_name, _symbol)
     EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION)
     {
+        require(_maxAmount > 0, "MaxAmount has to be positive number");
         marketplace = _marketplace;
         platformFee = _platformFee;
         feeReceipient = _feeReceipient;

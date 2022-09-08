@@ -18,10 +18,11 @@ const nonExistentTokenId = 99;
 const zeroAddress = '0x0000000000000000000000000000000000000000';
 const sampleUri = 'ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi';
 
-describe('ArtongNFT', function() {
+describe('ArtongNFT', async function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
+    this.ArtongNFTFactory = await ethers.getContractFactory('ArtongNFTFactory');
   });
 
   beforeEach(async function () {
@@ -31,6 +32,7 @@ describe('ArtongNFT', function() {
       [platformFee, feeReceipient.address],
       { initializer: 'initialize' }
     );
+
     const artongNft = await this.ArtongNFT.deploy(
       name,
       symbol,
@@ -41,12 +43,19 @@ describe('ArtongNFT', function() {
       policy
     );
 
+    const factory = await this.ArtongNFTFactory.deploy(
+      marketplace.address,
+      feeReceipient.address,
+      platformFee
+    );
+
     this.owner = owner;
     this.feeReceipient = feeReceipient;
     this.marketplace = marketplace;
     this.randomUser1 = randomUser1;
     this.randomUser2 = randomUser2;
     this.artongNft = artongNft;
+    this.factory = factory;
   });
 
   describe('metadata', function() {
@@ -196,6 +205,30 @@ describe('ArtongNFT', function() {
               .to.be.revertedWith("ERC721: invalid token ID");
           });
         });
+      });
+    });
+  });
+
+  describe('factory', function() {
+    context('when maxAmount is less or equal to 0', function() {
+      it('Should fail to create contract', async function() {
+        await expect(this.factory.createNFTContract(
+          name,
+          symbol,
+          0,
+          policy
+        )).to.be.revertedWith("MaxAmount has to be positive number");
+      });
+    });
+  
+    context('when policy is neither 0 nor 1', function() {
+      it('Should fail to create contract', async function() {
+        await expect(this.factory.createNFTContract(
+          name,
+          symbol,
+          maxAmount,
+          3
+        )).to.be.revertedWith("function was called with incorrect parameters");
       });
     });
   });
