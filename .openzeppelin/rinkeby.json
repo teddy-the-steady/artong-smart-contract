@@ -1,0 +1,536 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0x0eF4373426E4e64b80a3feB9a98173abe1d871E6",
+    "txHash": "0xf8a3d57f019703d71bfb115e0d31dc31edc4195b87c3cbf0ca3f425d4eb59057"
+  },
+  "proxies": [
+    {
+      "address": "0x4C37C71694b4f6e73312356eDF067392ad958d19",
+      "txHash": "0x04a0b8c6dab5f355e47225bb3bbc74781a9b1f8ac992f14c95d276a872decf23",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6Ac3a00aD13c94E5D8BA4eEc8F124A92cb37AE82",
+      "txHash": "0x5407853c9b430217c1537e6426572f20b7cc7b62d120bf8f3e17bb9b39f2209e",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x8f19abD5081cbb367b998098282d6a06ccfa1664",
+      "txHash": "0x5640910652aa7de937b3a6c54354b17aebe7471f1be139de37bbe20e0dac677d",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "54bac5b2a4ef7b85a3f8a21d1c00ee0bc6dc1a953c352bca2d3dee2949857dc8": {
+      "address": "0x5a4354AD96C65C5e1d21A5DAfd9525105b0fc4f4",
+      "txHash": "0x7c571df4981724814ec5d5b5d0f9dd075b573cd3977bdf361a10a8c76178f257",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "label": "platformFee",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_uint16",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:77"
+          },
+          {
+            "label": "feeReceipient",
+            "offset": 2,
+            "slot": "151",
+            "type": "t_address_payable",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:79"
+          },
+          {
+            "label": "listingPrices",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:82"
+          },
+          {
+            "label": "offers",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)860_storage)))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:85"
+          },
+          {
+            "label": "userOffers",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_mapping(t_address,t_array(t_struct(Offer)860_storage)dyn_storage)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:89"
+          },
+          {
+            "label": "collectionRoyalties",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_mapping(t_address,t_struct(CollectionRoyalty)865_storage)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:92"
+          },
+          {
+            "label": "tokenRoyalties",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_mapping(t_address,t_uint16)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:95"
+          },
+          {
+            "label": "minters",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_address))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:98"
+          },
+          {
+            "label": "artongBalances",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:101"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_address_payable": {
+            "label": "address payable",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_struct(Offer)860_storage)dyn_storage": {
+            "label": "struct ArtongMarketplace.Offer[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_struct(Offer)860_storage)dyn_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.Offer[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_address))": {
+            "label": "mapping(address => mapping(uint256 => address))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)860_storage)))": {
+            "label": "mapping(address => mapping(uint256 => mapping(address => struct ArtongMarketplace.Offer)))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+            "label": "mapping(address => mapping(uint256 => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(CollectionRoyalty)865_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.CollectionRoyalty)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Offer)860_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.Offer)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint16)": {
+            "label": "mapping(address => uint16)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)860_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct ArtongMarketplace.Offer))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(CollectionRoyalty)865_storage": {
+            "label": "struct ArtongMarketplace.CollectionRoyalty",
+            "members": [
+              {
+                "label": "royalty",
+                "type": "t_uint16",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "royaltyBalance",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(Offer)860_storage": {
+            "label": "struct ArtongMarketplace.Offer",
+            "members": [
+              {
+                "label": "price",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deadline",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "6d4aa221d2c25731218e531a6e597f05608b0c26e1283f0358b9bd5e5d6917de": {
+      "address": "0x343658F82Fcd029160d2CB96bd73B4D265768647",
+      "txHash": "0xee6688e528b049d958796c2195d160289c071b8c45732ffa7fecc487e490f06d",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "label": "platformFee",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_uint16",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:77"
+          },
+          {
+            "label": "feeReceipient",
+            "offset": 2,
+            "slot": "151",
+            "type": "t_address_payable",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:79"
+          },
+          {
+            "label": "listingPrices",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:82"
+          },
+          {
+            "label": "offers",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)3350_storage)))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:85"
+          },
+          {
+            "label": "userOffers",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_mapping(t_address,t_array(t_struct(Offer)3350_storage)dyn_storage)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:89"
+          },
+          {
+            "label": "collectionRoyalties",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_mapping(t_address,t_struct(CollectionRoyalty)3355_storage)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:92"
+          },
+          {
+            "label": "tokenRoyalties",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_mapping(t_address,t_uint16)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:95"
+          },
+          {
+            "label": "minters",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_address))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:98"
+          },
+          {
+            "label": "artongBalances",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:101"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_address_payable": {
+            "label": "address payable",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_struct(Offer)3350_storage)dyn_storage": {
+            "label": "struct ArtongMarketplace.Offer[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_struct(Offer)3350_storage)dyn_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.Offer[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_address))": {
+            "label": "mapping(address => mapping(uint256 => address))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)3350_storage)))": {
+            "label": "mapping(address => mapping(uint256 => mapping(address => struct ArtongMarketplace.Offer)))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+            "label": "mapping(address => mapping(uint256 => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(CollectionRoyalty)3355_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.CollectionRoyalty)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Offer)3350_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.Offer)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint16)": {
+            "label": "mapping(address => uint16)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)3350_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct ArtongMarketplace.Offer))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(CollectionRoyalty)3355_storage": {
+            "label": "struct ArtongMarketplace.CollectionRoyalty",
+            "members": [
+              {
+                "label": "royalty",
+                "type": "t_uint16",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "royaltyBalance",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(Offer)3350_storage": {
+            "label": "struct ArtongMarketplace.Offer",
+            "members": [
+              {
+                "label": "price",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deadline",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}
