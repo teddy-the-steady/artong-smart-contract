@@ -4,12 +4,24 @@ require('@openzeppelin/hardhat-upgrades');
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.9",
+  solidity: {
+    version: "0.8.9",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: 1337
     },
+    rinkeby: {
+      url: 'https://rinkeby.infura.io/v3/c60789555fff407eabc1c2bfa1330684',
+      accounts: [process.env.privateKey],
+    }
     // mainnet: {
     //   url: `https://rpcapi.fantom.network`,
     //   chainId: 250,

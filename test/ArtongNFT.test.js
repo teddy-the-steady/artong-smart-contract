@@ -126,83 +126,83 @@ describe('ArtongNFT', async function() {
           .to.be.revertedWith("Ownable: caller is not the owner");
       });
     })
-  });
 
-  context('when policy is Immediate = 0', async function() {
-    before(async function() {
-      await this.artongNft.connect(this.owner).setPolicy(0);
-    });
-
-    context('with minted tokens', function () {
-      beforeEach(async function () {
-        await this.artongNft.mint(this.randomUser1.address, sampleUri);
-        await this.artongNft.mint(this.randomUser2.address, sampleUri);
-        await this.artongNft.mint(this.randomUser1.address, sampleUri);
+    context('when policy is Immediate = 0', async function() {
+      before(async function() {
+        await this.artongNft.connect(this.owner).setPolicy(0);
       });
-
-      describe('maxAmount', function() {
-        context('when maximum amount is reached', function() {
-          it('Should fail to mint', async function() {
-            await this.artongNft.mint(this.randomUser2.address, sampleUri);
-            
-            await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
-              .to.revertedWith("Maximum number of NFTs reached");
+  
+      context('with minted tokens', function () {
+        beforeEach(async function () {
+          await this.artongNft.mint(this.randomUser1.address, sampleUri);
+          await this.artongNft.mint(this.randomUser2.address, sampleUri);
+          await this.artongNft.mint(this.randomUser1.address, sampleUri);
+        });
+  
+        describe('maxAmount', function() {
+          context('when maximum amount is reached', function() {
+            it('Should fail to mint', async function() {
+              await this.artongNft.mint(this.randomUser2.address, sampleUri);
+              
+              await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
+                .to.revertedWith("Maximum number of NFTs reached");
+            });
           });
         });
-      });
-
-      describe('random user', function() {
-        it('Should fail to pause contract', async function() {
-          await expect(this.artongNft.connect(this.randomUser1).pause())
-            .to.be.revertedWith("Not authorized");
+  
+        describe('random user', function() {
+          it('Should fail to pause contract', async function() {
+            await expect(this.artongNft.connect(this.randomUser1).pause())
+              .to.be.revertedWith("Not authorized");
+          });
+      
+          it('Should fail to burn a token', async function() {
+            await expect(this.artongNft.connect(this.randomUser2).burn(firstTokenId))
+              .to.be.revertedWith("ERC721: caller is not token owner nor approved");
+          });
         });
+  
+        describe('minter', function() {
+          it('Should be able to burn minted token', async function() {
+            await expect(this.artongNft.connect(this.randomUser1).burn(firstTokenId))
+              .to.emit(this.artongNft, 'Transfer')
+              .withArgs(this.randomUser1.address, zeroAddress, firstTokenId);
+          });
+        });
+  
+        describe('balanceOf', function () {
+          context('when the given address owns some tokens', function () {
+            it('Should return the amount of tokens owned by the given address', async function () {
+              expect(await this.artongNft.balanceOf(this.randomUser1.address)).to.equal(2);
+            });
+          });
     
-        it('Should fail to burn a token', async function() {
-          await expect(this.artongNft.connect(this.randomUser2).burn(firstTokenId))
-            .to.be.revertedWith("ERC721: caller is not token owner nor approved");
-        });
-      });
-
-      describe('minter', function() {
-        it('Should be able to burn minted token', async function() {
-          await expect(this.artongNft.connect(this.randomUser1).burn(firstTokenId))
-            .to.emit(this.artongNft, 'Transfer')
-            .withArgs(this.randomUser1.address, zeroAddress, firstTokenId);
-        });
-      });
-
-      describe('balanceOf', function () {
-        context('when the given address owns some tokens', function () {
-          it('Should return the amount of tokens owned by the given address', async function () {
-            expect(await this.artongNft.balanceOf(this.randomUser1.address)).to.equal(2);
+          context('when the given address does not own any tokens', function () {
+            it('Should return 0', async function () {
+              expect(await this.artongNft.balanceOf(this.feeReceipient.address)).to.equal(0);
+            });
+          });
+    
+          context('when querying the zero address', function () {
+            it('Should throw error', async function () {
+              await expect(this.artongNft.balanceOf(zeroAddress))
+                .to.be.revertedWith("ERC721: address zero is not a valid owner");
+            });
           });
         });
   
-        context('when the given address does not own any tokens', function () {
-          it('Should return 0', async function () {
-            expect(await this.artongNft.balanceOf(this.feeReceipient.address)).to.equal(0);
-          });
-        });
-  
-        context('when querying the zero address', function () {
-          it('Should throw error', async function () {
-            await expect(this.artongNft.balanceOf(zeroAddress))
-              .to.be.revertedWith("ERC721: address zero is not a valid owner");
-          });
-        });
-      });
-
-      describe('ownerOf', function () {
-        context('when the given token ID was tracked by this token', function () {
-          it('Should return the owner of the given token ID', async function () {
-            expect(await this.artongNft.ownerOf(firstTokenId)).to.be.equal(this.randomUser1.address)
+        describe('ownerOf', function () {
+          context('when the given token ID was tracked by this token', function () {
+            it('Should return the owner of the given token ID', async function () {
+              expect(await this.artongNft.ownerOf(firstTokenId)).to.be.equal(this.randomUser1.address)
+            })
           })
-        })
-  
-        context('when the given token ID was not tracked by this token', function () {
-          it('Should fail to return the owner', async function () {
-            await expect(this.artongNft.ownerOf(nonExistentTokenId))
-              .to.be.revertedWith("ERC721: invalid token ID");
+    
+          context('when the given token ID was not tracked by this token', function () {
+            it('Should fail to return the owner', async function () {
+              await expect(this.artongNft.ownerOf(nonExistentTokenId))
+                .to.be.revertedWith("ERC721: invalid token ID");
+            });
           });
         });
       });
@@ -251,6 +251,22 @@ describe('ArtongNFT', async function() {
           maxAmount,
           3
         )).to.be.revertedWith("function was called with incorrect parameters");
+      });
+    });
+  });
+
+  describe('minting', function() {
+    beforeEach(async function () {
+      await this.artongNft.mint(this.randomUser1.address, sampleUri);
+    });
+
+    context('when minter already registered', function() {
+      it('Should fail to register minter', async function() {
+        await expect(this.marketplace.registerMinter(
+          this.randomUser1.address,
+          this.artongNft.address,
+          firstTokenId
+        )).to.be.revertedWith('minter already registered')
       });
     });
   });
