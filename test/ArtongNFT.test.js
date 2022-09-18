@@ -23,10 +23,9 @@ describe('ArtongNFT', async function() {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
     this.ArtongNFTFactory = await ethers.getContractFactory('ArtongNFTFactory');
-  });
 
-  beforeEach(async function () {
     const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
+
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,
       [platformFee, feeReceipient.address],
@@ -51,12 +50,49 @@ describe('ArtongNFT', async function() {
 
     this.owner = owner;
     this.feeReceipient = feeReceipient;
-    this.marketplace = marketplace;
     this.randomUser1 = randomUser1;
     this.randomUser2 = randomUser2;
+    this.marketplace = marketplace;
     this.artongNft = artongNft;
     this.factory = factory;
   });
+
+  // beforeEach(async function () {
+    // const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
+    // const owner = await ethers.getSigner('0xacf901ebdca03c6a74ee9456727f92caff3c35a6');
+    // const feeReceipient = await ethers.getSigner('0xF042403Cdf2cB073a2A371Dce25A4F94dc8660DF');
+    // const randomUser1 = await ethers.getSigner('0x2A4e0CCF650815AAC184790CB9e6bD815239682e');
+    // const randomUser2 = await ethers.getSigner('0xD7e17567Bd528C073f71ff174d1f706bBA424E72');
+    // const marketplace = await upgrades.deployProxy(
+    //   this.ArtongMarketplace,
+    //   [platformFee, feeReceipient.address],
+    //   { initializer: 'initialize' }
+    // );
+
+    // const artongNft = await this.ArtongNFT.deploy(
+    //   name,
+    //   symbol,
+    //   marketplace.address,
+    //   platformFee,
+    //   feeReceipient.address,
+    //   maxAmount,
+    //   policy
+    // );
+
+    // const factory = await this.ArtongNFTFactory.deploy(
+    //   marketplace.address,
+    //   feeReceipient.address,
+    //   platformFee
+    // );
+
+    // this.owner = owner;
+    // this.feeReceipient = feeReceipient;
+    // this.marketplace = marketplace;
+    // this.randomUser1 = randomUser1;
+    // this.randomUser2 = randomUser2;
+    // this.artongNft = artongNft;
+    // this.factory = factory;
+  // });
 
   describe('metadata', function() {
     it('Should have a name', async function() {
@@ -276,15 +312,15 @@ describe('ArtongNFT Lazy minting', function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
-  });
 
-  beforeEach(async function () {
     const [owner, minter, redeemer, feeReceipient, randomUser, _] = await ethers.getSigners();
+
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,
       [platformFee, feeReceipient.address],
       { initializer: 'initialize' }
     );
+
     const artongNft = await this.ArtongNFT.deploy(
       name,
       symbol,
@@ -295,8 +331,6 @@ describe('ArtongNFT Lazy minting', function() {
       policy
     );
 
-    // the redeemerContract is an instance of the contract that's wired up to the redeemer's signing key
-    // TODO] this.artongNft.connect(this.redeemer).redeem 이랑 어떤점이 다르지??
     const redeemerFactory = this.ArtongNFT.connect(redeemer);
     const redeemerContract = redeemerFactory.attach(artongNft.address);
 
@@ -309,6 +343,30 @@ describe('ArtongNFT Lazy minting', function() {
     this.randomUser = randomUser;
     this.redeemerContract = redeemerContract;
   });
+
+  // beforeEach(async function () {
+    // const [owner, minter, redeemer, feeReceipient, randomUser, _] = await ethers.getSigners();
+    // const owner = await ethers.getSigner('0xacf901ebdca03c6a74ee9456727f92caff3c35a6');
+    // const minter = await ethers.getSigner('0xF042403Cdf2cB073a2A371Dce25A4F94dc8660DF');
+    // const redeemer = await ethers.getSigner('0x2A4e0CCF650815AAC184790CB9e6bD815239682e');
+    // const feeReceipient = await ethers.getSigner('0xD7e17567Bd528C073f71ff174d1f706bBA424E72');
+    // const randomUser = await ethers.getSigner('0x38f89664ABB61eD691dEb236bB984D32efd0E026');
+    
+
+    // the redeemerContract is an instance of the contract that's wired up to the redeemer's signing key
+    // TODO] this.artongNft.connect(this.redeemer).redeem 이랑 어떤점이 다르지??
+    // const redeemerFactory = this.ArtongNFT.connect(redeemer);
+    // const redeemerContract = redeemerFactory.attach(artongNft.address);
+
+    // this.owner = owner;
+    // this.minter = minter;
+    // this.marketplace = marketplace;
+    // this.redeemer = redeemer;
+    // this.feeReceipient = feeReceipient;
+    // this.artongNft = artongNft;
+    // this.randomUser = randomUser;
+    // this.redeemerContract = redeemerContract;
+  // });
 
   it('Should redeem an NFT from a signed voucher', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
