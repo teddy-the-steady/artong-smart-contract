@@ -30,6 +30,10 @@ describe('ArtongMarketplace', function() {
     this.Nft = await ethers.getContractFactory('ArtongNFT');
 
     const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
+    // const owner = await ethers.getSigner('0xacf901ebdca03c6a74ee9456727f92caff3c35a6');
+    // const feeReceipient = await ethers.getSigner('0xF042403Cdf2cB073a2A371Dce25A4F94dc8660DF');
+    // const randomUser1 = await ethers.getSigner('0x2A4e0CCF650815AAC184790CB9e6bD815239682e');
+    // const randomUser2 = await ethers.getSigner('0xD7e17567Bd528C073f71ff174d1f706bBA424E72');
 
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,
@@ -57,38 +61,6 @@ describe('ArtongMarketplace', function() {
     this.marketplace = marketplace;
     this.nft = nft;
   });
-
-  // beforeEach(async function () {
-    // const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
-    // const owner = await ethers.getSigner('0xacf901ebdca03c6a74ee9456727f92caff3c35a6');
-    // const feeReceipient = await ethers.getSigner('0xF042403Cdf2cB073a2A371Dce25A4F94dc8660DF');
-    // const randomUser1 = await ethers.getSigner('0x2A4e0CCF650815AAC184790CB9e6bD815239682e');
-    // const randomUser2 = await ethers.getSigner('0xD7e17567Bd528C073f71ff174d1f706bBA424E72');
-    // const marketplace = await upgrades.deployProxy(
-    //   this.ArtongMarketplace,
-    //   [platformFee, feeReceipient.address],
-    //   { initializer: 'initialize' }
-    // );
-    // const nft = await this.Nft.deploy(
-    //   name,
-    //   symbol,
-    //   marketplace.address,
-    //   platformFee,
-    //   feeReceipient.address,
-    //   maxAmount,
-    //   policy
-    // );
-    
-    // this.nft.mint(randomUser1.address, sampleUri);
-    // this.nft.mint(randomUser2.address, sampleUri);
-
-    // this.owner = owner;
-    // this.feeReceipient = feeReceipient;
-    // this.randomUser1 = randomUser1;
-    // this.randomUser2 = randomUser2;
-    // this.marketplace = marketplace;
-    // this.nft = nft;
-  // });
 
   describe('minter', function() {
     it('Should fail to register existing minter', async function() {
