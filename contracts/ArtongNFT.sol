@@ -26,6 +26,11 @@ contract ArtongNFT is
 {
     using Counters for Counters.Counter;
 
+    event UpdatePolicy(
+        Policy policy,
+        address updater
+    );
+
     Counters.Counter private tokenIdCounter;
     uint256 public immutable maxAmount;
     
@@ -106,6 +111,7 @@ contract ArtongNFT is
     }
 
     function setPolicy(Policy _policy) public onlyOwner {
+        emit UpdatePolicy(_policy, msg.sender);
         policy = _policy;
     }
 
