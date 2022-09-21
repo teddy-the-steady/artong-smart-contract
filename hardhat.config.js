@@ -13,14 +13,25 @@ module.exports = {
       }
     }
   },
+  mocha: {
+    timeout: 100000000
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
       chainId: 1337
     },
-    rinkeby: {
-      url: 'https://rinkeby.infura.io/v3/c60789555fff407eabc1c2bfa1330684',
-      accounts: [process.env.privateKey],
+    ropsten: {
+      url: 'https://ropsten.infura.io/v3/c60789555fff407eabc1c2bfa1330684',
+      accounts: [
+        process.env.PRIVATE_KEY_2,
+        process.env.PRIVATE_KEY_1,
+        process.env.PRIVATE_KEY_3,
+        process.env.PRIVATE_KEY_4,
+        process.env.PRIVATE_KEY_5,
+      ],
+      gas: 2100000,
+      gasPrice: 8000000000,
     }
     // mainnet: {
     //   url: `https://rpcapi.fantom.network`,
