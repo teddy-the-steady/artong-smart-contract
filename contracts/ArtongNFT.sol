@@ -46,8 +46,8 @@ contract ArtongNFT is
         bytes signature;
     }
 
-    /// @notice Immediate(default): mint or lazy mint. burnable by owner
-    /// @notice Approved: Only lazy mint. content will stay hidden until owner opens it
+    /// @notice Immediate: mint or lazy mint. burnable by minter
+    /// @notice Approved(default): Only lazy mint. content will stay hidden until owner opens it
     Policy public policy;
 
     address public marketplace;
@@ -226,5 +226,4 @@ contract ArtongNFT is
 }
 
 // TODO
-// IPFS랑 tokenURI 설정 테스트
 // for theGraph. 어떤 이벤트 필요한지 테스트해보고 이벤트 넣기! (이게 끝판왕)
