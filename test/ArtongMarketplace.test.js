@@ -598,7 +598,7 @@ describe('ArtongMarketplace', function() {
         );
       });
 
-      it('Should be able to withdraw balance', async function() { // TODO] ropsten에서 돈계산이 안맞음.. 로직 확인해보자
+      it('Should be able to withdraw balance', async function() { // TODO] 테스트넷에서 돈계산이 안맞음.. 로직 확인해보자
         const balance = await this.marketplace.getArtongBalance(
           parseInt(new Date().getTime() / 1000),
           this.randomUser1.address
