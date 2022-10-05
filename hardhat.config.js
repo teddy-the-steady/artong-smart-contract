@@ -21,8 +21,8 @@ module.exports = {
       allowUnlimitedContractSize: true,
       chainId: 1337
     },
-    ropsten: {
-      url: 'https://ropsten.infura.io/v3/c60789555fff407eabc1c2bfa1330684',
+    goerli: {
+      url: 'https://goerli.infura.io/v3/c60789555fff407eabc1c2bfa1330684',
       accounts: [
         process.env.PRIVATE_KEY_2,
         process.env.PRIVATE_KEY_1,
