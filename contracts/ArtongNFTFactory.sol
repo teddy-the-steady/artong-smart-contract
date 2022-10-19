@@ -6,7 +6,15 @@ import "./ArtongNFT.sol";
 import "./Enums.sol";
 
 contract ArtongNFTFactory is Ownable {
-    event ContractCreated(address creator, address nft);
+    event ContractCreated(
+        address creator,
+        address nft,
+        string name,
+        string symbol,
+        uint256 maxAmount,
+        Policy policy
+    );
+    event ContractRegistered(address creator, address nft);
     event ContractDisabled(address caller, address nft);
 
     address public marketplace;
@@ -71,7 +79,14 @@ contract ArtongNFTFactory is Ownable {
         );
         exists[address(nft)] = true;
         nft.transferOwnership(msg.sender);
-        emit ContractCreated(msg.sender, address(nft));
+        emit ContractCreated(
+            msg.sender,
+            address(nft),
+            _name,
+            _symbol,
+            _maxAmount,
+            _policy
+        );
         return address(nft);
     }
 
@@ -84,7 +99,7 @@ contract ArtongNFTFactory is Ownable {
         require(!exists[tokenContractAddress], "NFT contract already registered");
         require(IERC165(tokenContractAddress).supportsInterface(type(IERC721).interfaceId), "Not an ERC721 contract");
         exists[tokenContractAddress] = true;
-        emit ContractCreated(_msgSender(), tokenContractAddress);
+        emit ContractRegistered(msg.sender, tokenContractAddress);
     }
 
     /// @notice Method for disabling existing ArtongNFT contract
@@ -95,6 +110,6 @@ contract ArtongNFTFactory is Ownable {
     {
         require(exists[tokenContractAddress], "NFT contract is not registered");
         exists[tokenContractAddress] = false;
-        emit ContractDisabled(_msgSender(), tokenContractAddress);
+        emit ContractDisabled(msg.sender, tokenContractAddress);
     }
 }
