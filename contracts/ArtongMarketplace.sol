@@ -354,7 +354,7 @@ contract ArtongMarketplace is
 
         emit OfferAccepted(_nftAddress, _tokenId, _creator);
 
-        delete (offer);
+        delete (offers[_nftAddress][_tokenId][_creator]);
         _deleteSoldUserOffer(offer);
     }
 
