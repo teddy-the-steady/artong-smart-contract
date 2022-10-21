@@ -33,6 +33,12 @@ contract ArtongNFT is
         address updater
     );
 
+    event TokenMinted(
+        address minter,
+        uint256 tokenId,
+        string tokenUri
+    );
+
     Counters.Counter private tokenIdCounter;
     uint256 public immutable maxAmount;
     
@@ -178,6 +184,8 @@ contract ArtongNFT is
         _mint(_to, newTokenId);
         _setTokenURI(newTokenId, _tokenUri);
 
+        emit TokenMinted(_to, newTokenId, _tokenUri);
+
         return newTokenId;
     }
 
@@ -224,6 +232,3 @@ contract ArtongNFT is
         return super.supportsInterface(interfaceId);
     }
 }
-
-// TODO
-// for theGraph. 어떤 이벤트 필요한지 테스트해보고 이벤트 넣기! (이게 끝판왕)

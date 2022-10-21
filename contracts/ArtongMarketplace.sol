@@ -64,6 +64,11 @@ contract ArtongMarketplace is
         uint16 royalty
     );
 
+    event Received(
+        address indexed sender,
+        uint256 amount
+    );
+
     struct Offer {
         uint256 price;
         uint256 deadline;
@@ -502,5 +507,9 @@ contract ArtongMarketplace is
 
     function _isNFTValid(address _nftAddress) private view returns (bool) {
         return IERC165(_nftAddress).supportsInterface(type(IERC721).interfaceId);
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
     }
 }
