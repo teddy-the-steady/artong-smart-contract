@@ -24,6 +24,71 @@
       "address": "0xd99124885fC15310181677D1eE7B310622057653",
       "txHash": "0x74ee9140253c646e300745795868c0da0d2ed4d965a78bd59991aa288f3f1bb1",
       "kind": "transparent"
+    },
+    {
+      "address": "0x5a4354AD96C65C5e1d21A5DAfd9525105b0fc4f4",
+      "txHash": "0x02dfa1bb0f109ad308e8d1a29f483ff6a76d80c41bf153fc266f2cb54f2923af",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x2b91b62BC986a7A9EFaC419e78C47565BFCB473B",
+      "txHash": "0x9b5e993533476dee7df3058de274a03889a9895c05c522c16b4605325e80217f",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x87d808bDa3Fe58F94BfD02ED4938f5b73dED6697",
+      "txHash": "0x37e46b06e0a0c6876dd95f4c640b3be16025fc9a517eeea21e7601f9d7a0e989",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x3eA235D5557FE67B90cCF97DA0053D74f1934aC9",
+      "txHash": "0x42ebfa7bfbf9e98b5754b6db9e4340357c7d43a483b555fcc2b1079036d340ed",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xF6839FCaa9A2352ab4fE393f7e8BAd3B88baEee4",
+      "txHash": "0xf259934382b9de08512c67e914dd486d6e4785849ea7265ac378cb6329ae33cd",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xDD4AB8624835bA97D8dFC9Bc08774dbB4Bf64A27",
+      "txHash": "0xd018423cea98495a4356438c7a8a3a02b485f7227c078ae76848d06f5945e844",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x0449be644CAE83B59a7AF1DC31543C799A0450f5",
+      "txHash": "0xb575771a8355a7ed707a351a6f6e38f12ab61d8fdf82dbc9bd03b13a94e4d519",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x3CBfaC7562A296B0E6C5E8D8303453Ffd79dfEa5",
+      "txHash": "0xc6c22f9402af70e1692888cc3f1d597d0a5021f26fe73f3e210ef2124a3d7c5e",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x6fd6b82fBA18F809DD190448eA33B40801d71693",
+      "txHash": "0xa8a953a0e1f3bf12e0cc8fa35dab4c759106a389ca942afe03d450f40d807394",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x4Ecf41d3693E2f44bA19502bdBfdd3211B4dE845",
+      "txHash": "0xbaa0ff37814ed610bb8838b2a15e60fa5026a2a00224612b6eee257503c87cad",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x78E58Bbae51a065236c6d26ecF208a62A6d432d3",
+      "txHash": "0xca2a8d3b897412258d177b9a04216420f6cdd3b55a329f6b33d651458500a3e2",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xbEC9303a4Eb95DCA3d2Ff6441a44f0188Dfee2C2",
+      "txHash": "0x996c264623b9d2a436edcb34ba943f24103bdcb320870250025f0d944b402a26",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xa9b7639193ECAC622d43a18Fb28cA2F20516E264",
+      "txHash": "0x6dbff4ce3d4b11b87bab112f3bf37ef1f6f53e51118b29a4f6dd38f2be987a00",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -250,6 +315,261 @@
             "numberOfBytes": "64"
           },
           "t_struct(Offer)3719_storage": {
+            "label": "struct ArtongMarketplace.Offer",
+            "members": [
+              {
+                "label": "price",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "deadline",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint16": {
+            "label": "uint16",
+            "numberOfBytes": "2"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    "5e70512e1aed9a571c579249bd625a3755ecaa1318ea726eaa89df34d5abbe1e": {
+      "address": "0x9756B23c3cF2ac931dD1F843a5877AEFD33BB45c",
+      "txHash": "0xb1e34978ca1ce6b6344f32224e5bc05f445a58a3d75fb1b272038214b7d42679",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "label": "platformFee",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_uint16",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:82"
+          },
+          {
+            "label": "feeReceipient",
+            "offset": 2,
+            "slot": "151",
+            "type": "t_address_payable",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:84"
+          },
+          {
+            "label": "listingPrices",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:87"
+          },
+          {
+            "label": "offers",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)3725_storage)))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:90"
+          },
+          {
+            "label": "userOffers",
+            "offset": 0,
+            "slot": "154",
+            "type": "t_mapping(t_address,t_array(t_struct(Offer)3725_storage)dyn_storage)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:94"
+          },
+          {
+            "label": "collectionRoyalties",
+            "offset": 0,
+            "slot": "155",
+            "type": "t_mapping(t_address,t_struct(CollectionRoyalty)3730_storage)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:97"
+          },
+          {
+            "label": "tokenRoyalties",
+            "offset": 0,
+            "slot": "156",
+            "type": "t_mapping(t_address,t_uint16)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:100"
+          },
+          {
+            "label": "minters",
+            "offset": 0,
+            "slot": "157",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_address))",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:103"
+          },
+          {
+            "label": "artongBalances",
+            "offset": 0,
+            "slot": "158",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "ArtongMarketplace",
+            "src": "contracts/ArtongMarketplace.sol:106"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_address_payable": {
+            "label": "address payable",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_struct(Offer)3725_storage)dyn_storage": {
+            "label": "struct ArtongMarketplace.Offer[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_array(t_struct(Offer)3725_storage)dyn_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.Offer[])",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_address))": {
+            "label": "mapping(address => mapping(uint256 => address))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)3725_storage)))": {
+            "label": "mapping(address => mapping(uint256 => mapping(address => struct ArtongMarketplace.Offer)))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+            "label": "mapping(address => mapping(uint256 => uint256))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(CollectionRoyalty)3730_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.CollectionRoyalty)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Offer)3725_storage)": {
+            "label": "mapping(address => struct ArtongMarketplace.Offer)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint16)": {
+            "label": "mapping(address => uint16)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_address)": {
+            "label": "mapping(uint256 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_mapping(t_address,t_struct(Offer)3725_storage))": {
+            "label": "mapping(uint256 => mapping(address => struct ArtongMarketplace.Offer))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_uint256)": {
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(CollectionRoyalty)3730_storage": {
+            "label": "struct ArtongMarketplace.CollectionRoyalty",
+            "members": [
+              {
+                "label": "royalty",
+                "type": "t_uint16",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "royaltyBalance",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_struct(Offer)3725_storage": {
             "label": "struct ArtongMarketplace.Offer",
             "members": [
               {
