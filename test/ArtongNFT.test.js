@@ -94,7 +94,7 @@ describe('ArtongNFT', async function() {
 
       context('when owner burns an existing token', function() {
         before(async function() {
-          await this.artongNft.mint(this.randomUser1.address, sampleUri);
+          await this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri);
         });
 
         it('Should fail to burn a token', async function () {
@@ -123,7 +123,7 @@ describe('ArtongNFT', async function() {
           .to.emit(this.artongNft, 'UpdatePolicy')
           .withArgs(0, this.owner.address);
 
-        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
+        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri))
           .to.emit(this.artongNft, 'Transfer')
           .withArgs(zeroAddress, this.randomUser1.address, secondTokenId);
       });
@@ -135,7 +135,7 @@ describe('ArtongNFT', async function() {
           .to.emit(this.artongNft, 'UpdatePolicy')
           .withArgs(1, this.owner.address);
 
-        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri))
+        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri))
           // .to.be.revertedWith('Policy only allows lazy minting');
           .to.be.reverted;
       });
@@ -158,10 +158,10 @@ describe('ArtongNFT', async function() {
                 .to.emit(this.artongNft, 'UpdatePolicy')
                 .withArgs(0, this.owner.address);
               
-              await this.artongNft.mint(this.randomUser2.address, sampleUri);
-              await this.artongNft.mint(this.randomUser2.address, sampleUri);
+              await this.artongNft.mint(this.randomUser2.address, sampleUri, sampleUri);
+              await this.artongNft.mint(this.randomUser2.address, sampleUri, sampleUri);
               
-              await expect(this.artongNft.mint(this.marketplace.address, sampleUri))
+              await expect(this.artongNft.mint(this.marketplace.address, sampleUri, sampleUri))
                 // .to.revertedWith("Maximum number of NFTs reached");
                 .to.be.reverted;
             });
@@ -346,7 +346,7 @@ describe('ArtongNFT Lazy minting', function() {
 
   it('Should redeem an NFT from a signed voucher', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
-    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
+    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
 
     await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: ethers.utils.parseEther('0.0001') }))
       .to.emit(this.artongNft, 'Transfer')  // transfer from null address to minter
@@ -357,7 +357,7 @@ describe('ArtongNFT Lazy minting', function() {
 
   it('Should let minter withdraw earning and feeReceipient should recieve fee', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
-    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
+    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
     const price = ethers.utils.parseEther('0.0001');
 
     await expect(await this.redeemerContract.redeem(this.redeemer.address, voucher, { value: price }))
@@ -377,7 +377,7 @@ describe('ArtongNFT Lazy minting', function() {
 
   it('Should fail to redeem an NFT voucher thats signed by an unauthorized account', async function() {
     const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.randomUser });
-    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
+    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
 
     await expect(this.redeemerContract.redeem(this.redeemer.address, voucher))
       // .to.be.revertedWith('Signature invalid');
@@ -388,7 +388,7 @@ describe('ArtongNFT Lazy minting', function() {
     it('Should redeem', async function() {
       const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
       const minPrice = ethers.utils.parseEther('0.0001');
-      const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri);
+      const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
   
       await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: minPrice }))
         .to.emit(this.artongNft, 'Transfer')
@@ -402,7 +402,7 @@ describe('ArtongNFT Lazy minting', function() {
     it('Should fail to redeem', async function() {
       const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
       const minPrice = ethers.utils.parseEther('0.0001');
-      const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, minPrice);
+      const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri, minPrice);
   
       const payment = minPrice.sub(10000);
       await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: payment }))

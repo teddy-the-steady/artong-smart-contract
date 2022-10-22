@@ -70,13 +70,13 @@ describe('ArtongMarketplace', function() {
 
   describe('mint', function() {
     it('Should succesfully mint token 1', async function() {
-      await expect(this.nft.mint(this.randomUser1.address, sampleUri))
+      await expect(this.nft.mint(this.randomUser1.address, sampleUri, sampleUri))
         .to.emit(this.nft, 'Transfer')
         .withArgs(zeroAddress, this.randomUser1.address, firstTokenId);
     });
 
     it('Should succesfully mint token 2', async function() {
-      await expect(this.nft.mint(this.randomUser2.address, sampleUri))
+      await expect(this.nft.mint(this.randomUser2.address, sampleUri, sampleUri))
         .to.emit(this.nft, 'Transfer')
         .withArgs(zeroAddress, this.randomUser2.address, secondTokenId);
     });

@@ -36,7 +36,8 @@ contract ArtongNFT is
     event TokenMinted(
         address minter,
         uint256 tokenId,
-        string tokenUri
+        string tokenUri,
+        string contentUri
     );
 
     Counters.Counter private tokenIdCounter;
@@ -48,7 +49,8 @@ contract ArtongNFT is
     struct NFTVoucher {
         address creator;
         uint256 minPrice;
-        string uri;
+        string tokenUri;
+        string contentUri;
         bytes signature;
     }
 
@@ -87,9 +89,13 @@ contract ArtongNFT is
         policy = _policy;
     }
 
-    function mint(address _to, string calldata _tokenUri) public whenNotPaused returns (uint256) {
+    function mint(
+        address _to,
+        string calldata _tokenUri,
+        string calldata _contentUri
+    ) public whenNotPaused returns (uint256) {
         require(policy == Policy.Immediate, "Policy only allows lazy minting");
-        return _doMint(_to, _tokenUri);
+        return _doMint(_to, _tokenUri, _contentUri);
     }
 
     /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
@@ -110,7 +116,7 @@ contract ArtongNFT is
         (bool success,) = feeReceipient.call{value : feeAmount}("");
         require(success, "Transfer failed");
 
-        uint256 newTokenId = _doMint(voucher.creator, voucher.uri);
+        uint256 newTokenId = _doMint(voucher.creator, voucher.tokenUri, voucher.contentUri);
         _transfer(voucher.creator, redeemer, newTokenId);
 
         IArtongMarketplace(marketplace).sendArtongBalance{value: msg.value - feeAmount}(signer);
@@ -175,7 +181,11 @@ contract ArtongNFT is
         return super._isApprovedOrOwner(spender, tokenId);
     }
 
-    function _doMint(address _to, string calldata _tokenUri) private checkMaxAmount returns (uint256) {
+    function _doMint(
+        address _to,
+        string calldata _tokenUri,
+        string calldata _contentUri
+    ) private checkMaxAmount returns (uint256) {
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
 
@@ -184,7 +194,7 @@ contract ArtongNFT is
         _mint(_to, newTokenId);
         _setTokenURI(newTokenId, _tokenUri);
 
-        emit TokenMinted(_to, newTokenId, _tokenUri);
+        emit TokenMinted(_to, newTokenId, _tokenUri, _contentUri);
 
         return newTokenId;
     }
@@ -209,10 +219,11 @@ contract ArtongNFT is
     /// @param voucher An NFTVoucher to hash.
     function _hash(NFTVoucher calldata voucher) internal view returns (bytes32) {
         return _hashTypedDataV4(keccak256(abi.encode(
-            keccak256("NFTVoucher(address creator,uint256 minPrice,string uri)"),
+            keccak256("NFTVoucher(address creator,uint256 minPrice,string tokenUri,string contentUri)"),
             voucher.creator,
             voucher.minPrice,
-            keccak256(bytes(voucher.uri))
+            keccak256(bytes(voucher.tokenUri)),
+            keccak256(bytes(voucher.contentUri))
         )));
     }
 

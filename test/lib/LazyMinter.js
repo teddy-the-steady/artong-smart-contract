@@ -10,7 +10,8 @@ const SIGNING_DOMAIN_VERSION = "1"
  * @typedef {object} NFTVoucher
  * @property {address} creator creator of NFTVoucher
  * @property {ethers.BigNumber | number} minPrice the minimum price (in wei) that the creator will accept to redeem this NFT
- * @property {string} uri the metadata URI to associate with this NFT
+ * @property {string} tokenUri the metadata URI to associate with this NFT
+ * @property {string} contentUri the content URI to associate with this NFT
  * @property {ethers.BytesLike} signature an EIP-712 signature of all fields in the NFTVoucher, apart from signature itself.
  */
 
@@ -35,19 +36,21 @@ class LazyMinter {
    * Creates a new NFTVoucher object and signs it using this LazyMinter's signing key.
    * 
    * @param {address} creator creator of NFTVoucher
-   * @param {string} uri the metadata URI to associate with this NFT
+   * @param {string} tokenUri the metadata URI to associate with this NFT
+   * @param {string} contentUri the content URI to associate with this NFT
    * @param {ethers.BigNumber | number} minPrice the minimum price (in wei) that the creator will accept to redeem this NFT. defaults to zero
    * 
    * @returns {NFTVoucher}
    */
-  async createVoucher(creator, uri, minPrice = 0) {
-    const voucher = { creator, uri, minPrice }
+  async createVoucher(creator, tokenUri, contentUri, minPrice = 0) {
+    const voucher = { creator, tokenUri, contentUri, minPrice }
     const domain = await this._signingDomain()
     const types = {
       NFTVoucher: [
         {name: "creator", type: "address"},
         {name: "minPrice", type: "uint256"},
-        {name: "uri", type: "string"},  
+        {name: "tokenUri", type: "string"},
+        {name: "contentUri", type: "string"}, 
       ]
     }
     const signature = await this.signer._signTypedData(domain, types, voucher)
