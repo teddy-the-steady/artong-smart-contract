@@ -40,6 +40,12 @@ contract ArtongMarketplace is
         address indexed nft,
         uint256 tokenId
     );
+    event ListedItemSold(
+        address indexed owner,
+        address indexed nft,
+        uint256 tokenId,
+        uint256 price
+    );
     event OfferCreated(
         address indexed creator,
         address indexed nft,
@@ -228,6 +234,13 @@ contract ArtongMarketplace is
         address buyer = msg.sender;
         uint256 payAmount = msg.value;
         _buyItem(_nftAddress, _tokenId, seller, buyer, price, payAmount);
+
+        emit ListedItemSold(
+            seller,
+            _nftAddress,
+            _tokenId,
+            price
+        );
     }
 
     function _buyItem(
