@@ -47,6 +47,7 @@ contract ArtongMarketplace is
         uint256 price
     );
     event OfferCreated(
+        uint256 offerId,
         address indexed creator,
         address indexed nft,
         uint256 tokenId,
@@ -54,6 +55,7 @@ contract ArtongMarketplace is
         uint256 deadline
     );
     event OfferAccepted(
+        uint256 offerId,
         address indexed nft,
         uint256 tokenId,
         address indexed creator
@@ -344,6 +346,7 @@ contract ArtongMarketplace is
         artongBalances[msg.sender] += msg.value;
 
         emit OfferCreated(
+            offerId,
             msg.sender,
             _nftAddress,
             _tokenId,
@@ -377,7 +380,7 @@ contract ArtongMarketplace is
         address buyer = _creator;
         _buyItem(_nftAddress, _tokenId, seller, buyer, offer.price, offer.price);
 
-        emit OfferAccepted(_nftAddress, _tokenId, _creator);
+        emit OfferAccepted(offer.offerId, _nftAddress, _tokenId, _creator);
 
         delete (offers[_nftAddress][_tokenId][_creator]);
         _deleteSoldUserOffer(offer);
