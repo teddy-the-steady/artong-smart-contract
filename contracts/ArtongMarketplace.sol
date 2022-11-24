@@ -76,6 +76,7 @@ contract ArtongMarketplace is
     );
 
     struct Offer {
+        uint256 offerId;
         uint256 price;
         uint256 deadline;
     }
@@ -88,6 +89,8 @@ contract ArtongMarketplace is
     uint16 public platformFee; // 2 decimals(525->5.25)
 
     address payable public feeReceipient;
+
+    uint256 public offerId;
 
     /// @notice NftAddress -> Token ID -> Listing item price
     mapping(address => mapping(uint256 => uint256)) listingPrices;
@@ -324,12 +327,16 @@ contract ArtongMarketplace is
             _deadline = _getNow() + 1 days;
         }
 
+        offerId += 1;
+
         offers[_nftAddress][_tokenId][msg.sender] = Offer(
+            offerId,
             msg.value,
             _deadline
         );
 
         userOffers[msg.sender].push(Offer(
+            offerId,
             msg.value,
             _deadline
         ));
@@ -481,7 +488,7 @@ contract ArtongMarketplace is
     function _deleteSoldUserOffer(Offer memory offer) private {
         Offer[] storage userOffer = userOffers[msg.sender];
         for (uint256 i = 0; i < userOffer.length; i++) {
-            if (userOffer[i].deadline == offer.deadline && userOffer[i].price == offer.price) {
+            if (userOffer[i].offerId == offer.offerId) {
                 userOffer[i].deadline = 0;
                 break;
             }
