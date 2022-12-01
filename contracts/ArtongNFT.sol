@@ -15,7 +15,6 @@ import "./Enums.sol";
 interface IArtongMarketplace {
     function registerMinter(address _minter, address _nftAddress, uint256 _tokenId) external;
     function sendArtongBalance(address _user) external payable;
-    function updateCollectionRoyalty(address _nftAddress, uint16 _royalty) external;
     function updateTokenRoyalty(address _minter, address _nftAddress, uint256 _tokenId, uint16 _royalty) external;
 }
 
