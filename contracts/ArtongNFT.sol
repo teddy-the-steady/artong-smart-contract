@@ -14,8 +14,9 @@ import "./Enums.sol";
 
 interface IArtongMarketplace {
     function registerMinter(address _minter, address _nftAddress, uint256 _tokenId) external;
-
     function sendArtongBalance(address _user) external payable;
+    function updateCollectionRoyalty(address _nftAddress, uint16 _royalty) external;
+    function updateTokenRoyalty(address _minter, address _nftAddress, uint256 _tokenId, uint16 _royalty) external;
 }
 
 contract ArtongNFT is
@@ -92,10 +93,11 @@ contract ArtongNFT is
     function mint(
         address _to,
         string calldata _tokenUri,
-        string calldata _contentUri
+        string calldata _contentUri,
+        uint16 _tokenRoyalty
     ) public whenNotPaused returns (uint256) {
         require(policy == Policy.Immediate, "Policy only allows lazy minting");
-        return _doMint(_to, _tokenUri, _contentUri);
+        return _doMint(_to, _tokenUri, _contentUri, _tokenRoyalty);
     }
 
     /// @notice Redeems an NFTVoucher for an actual NFT, creating it in the process.
@@ -116,7 +118,7 @@ contract ArtongNFT is
         (bool success,) = feeReceipient.call{value : feeAmount}("");
         require(success, "Transfer failed");
 
-        uint256 newTokenId = _doMint(voucher.creator, voucher.tokenUri, voucher.contentUri);
+        uint256 newTokenId = _doMint(voucher.creator, voucher.tokenUri, voucher.contentUri, 0);
         _transfer(voucher.creator, redeemer, newTokenId);
 
         IArtongMarketplace(marketplace).sendArtongBalance{value: msg.value - feeAmount}(signer);
@@ -184,12 +186,14 @@ contract ArtongNFT is
     function _doMint(
         address _to,
         string calldata _tokenUri,
-        string calldata _contentUri
+        string calldata _contentUri,
+        uint16 _tokenRoyalty
     ) private checkMaxAmount returns (uint256) {
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
 
         IArtongMarketplace(marketplace).registerMinter(_to, address(this), newTokenId);
+        IArtongMarketplace(marketplace).updateTokenRoyalty(_to, address(this), newTokenId, _tokenRoyalty);
 
         _mint(_to, newTokenId);
         _setTokenURI(newTokenId, _tokenUri);

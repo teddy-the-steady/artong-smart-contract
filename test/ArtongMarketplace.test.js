@@ -70,13 +70,13 @@ describe('ArtongMarketplace', function() {
 
   describe('mint', function() {
     it('Should succesfully mint token 1', async function() {
-      await expect(this.nft.mint(this.randomUser1.address, sampleUri, sampleUri))
+      await expect(this.nft.mint(this.randomUser1.address, sampleUri, sampleUri, 500))
         .to.emit(this.nft, 'Transfer')
         .withArgs(zeroAddress, this.randomUser1.address, firstTokenId);
     });
 
     it('Should succesfully mint token 2', async function() {
-      await expect(this.nft.mint(this.randomUser2.address, sampleUri, sampleUri))
+      await expect(this.nft.mint(this.randomUser2.address, sampleUri, sampleUri, 500))
         .to.emit(this.nft, 'Transfer')
         .withArgs(zeroAddress, this.randomUser2.address, secondTokenId);
     });
@@ -167,9 +167,12 @@ describe('ArtongMarketplace', function() {
 
     it('Should be able to update tokenRoyalty', async function() {
       await expect(this.marketplace.connect(this.randomUser2).updateTokenRoyalty(
+        this.randomUser2.address,
+        this.nft.address,
+        10,
         tokenRoyalty
       )).to.emit(this.marketplace, 'UpdateTokenRoyalty')
-        .withArgs(this.randomUser2.address, tokenRoyalty);
+        .withArgs(this.randomUser2.address, this.nft.address, 10, tokenRoyalty);
     });
   });
 
@@ -337,7 +340,12 @@ describe('ArtongMarketplace', function() {
         context('when tokenRoyalty, collectionRoyalty exsists', function() {
           before(async function() {
             await this.marketplace.updateCollectionRoyalty(this.nft.address, collectionRoyalty);
-            await this.marketplace.connect(this.randomUser1).updateTokenRoyalty(tokenRoyalty);
+            await this.marketplace.connect(this.randomUser1).updateTokenRoyalty(
+              this.randomUser1.address,
+              this.nft.address,
+              tokenRoyalty,
+              firstTokenId
+            );
 
             await this.marketplace.connect(this.randomUser2).listItem(
               this.nft.address,
@@ -562,6 +570,7 @@ describe('ArtongMarketplace', function() {
           this.owner.address
         )).to.emit(this.marketplace, 'OfferAccepted')
           .withArgs(
+            2,
             this.nft.address,
             secondTokenId,
             this.owner.address,

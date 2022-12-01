@@ -63,7 +63,9 @@ contract ArtongMarketplace is
     event UpdatePlatformFee(uint16 platformFee);
     event UpdatePlatformFeeRecipient(address payable platformFeeRecipient);
     event UpdateTokenRoyalty(
-        address indexed tokenOwner,
+        address indexed minter,
+        address indexed nft,
+        uint256 tokenId,
         uint16 royalty
     );
     event UpdateCollectionRoyalty(
@@ -75,6 +77,12 @@ contract ArtongMarketplace is
     event Received(
         address indexed sender,
         uint256 amount
+    );
+
+    event ArtongBalanceUpdated(
+        address indexed user,
+        int256 amount,
+        uint256 balance
     );
 
     struct Offer {
@@ -107,8 +115,8 @@ contract ArtongMarketplace is
     /// @notice NftAddress -> CollectionRoyalty
     mapping(address => CollectionRoyalty) collectionRoyalties;
 
-    /// @notice Minter -> Token royalty // 2 decimals(525->5.25)
-    mapping(address => uint16) tokenRoyalties;
+    /// @notice Minter -> NftAddress -> Token ID -> Token royalty // 2 decimals(525->5.25)
+    mapping(address => mapping(address => mapping(uint256 => uint16))) tokenRoyalties;
 
     /// @notice NftAddress -> Token ID -> Minter
     mapping(address => mapping(uint256 => address)) minters;
@@ -262,7 +270,7 @@ contract ArtongMarketplace is
         require(_isNFTValid(_nftAddress), "invalid nft address");
 
         address minter = minters[_nftAddress][_tokenId];
-        uint16 tokenRoyalty = tokenRoyalties[minter];
+        uint16 tokenRoyalty = tokenRoyalties[minter][_nftAddress][_tokenId];
 
         CollectionRoyalty memory collectionRoyalty = collectionRoyalties[_nftAddress];
 
@@ -277,12 +285,12 @@ contract ArtongMarketplace is
         require(success, "Fee transfer failed");
 
         if (payAmount > _price) {
-            artongBalances[_buyer] += payAmount - _price;
+            _addArtongBalance(_buyer, payAmount - _price);
         }
 
         if (tokenRoyalty != 0) {
             uint256 royaltyFeeAmount = _calculateFeeAmount(_price, tokenRoyalty);
-            artongBalances[minter] += royaltyFeeAmount;
+            _addArtongBalance(minter, royaltyFeeAmount);
             feeAmount += royaltyFeeAmount;
         }
 
@@ -297,7 +305,7 @@ contract ArtongMarketplace is
         }
         
         // Send sold amount to seller(extract fee)
-        artongBalances[_seller] += _price - feeAmount;
+        _addArtongBalance(_seller, _price - feeAmount);
 
         // Transfer NFT to buyer
         IERC721(_nftAddress).safeTransferFrom(_seller, _buyer, _tokenId);
@@ -343,7 +351,7 @@ contract ArtongMarketplace is
             _deadline
         ));
 
-        artongBalances[msg.sender] += msg.value;
+        _addArtongBalance(msg.sender, msg.value);
 
         emit OfferCreated(
             offerId,
@@ -395,11 +403,11 @@ contract ArtongMarketplace is
         minters[_nftAddress][_tokenId] = _minter;
     }
 
-    function updateTokenRoyalty(uint16 _royalty) external {
+    function updateTokenRoyalty(address _minter, address _nftAddress, uint256 _tokenId, uint16 _royalty) external {
         require(_royalty <= 10000, "invalid royalty");
-        tokenRoyalties[msg.sender] = _royalty;
+        tokenRoyalties[_minter][_nftAddress][_tokenId] = _royalty;
 
-        emit UpdateTokenRoyalty(msg.sender, _royalty);
+        emit UpdateTokenRoyalty(_minter, _nftAddress, _tokenId, _royalty);
     }
 
     function updateCollectionRoyalty(
@@ -443,7 +451,7 @@ contract ArtongMarketplace is
         require(artongBalance != 0, "nothing to withdraw");
         require(address(this).balance >= artongBalance, "balance not enough to withdraw");
 
-        artongBalances[msg.sender] -= artongBalance;
+        _subArtongBalance(msg.sender, artongBalance);
 
         _deleteOldUserOffers(moment);
 
@@ -461,8 +469,28 @@ contract ArtongMarketplace is
         return artongBalances[user] - getOfferBalance(_moment, user);
     }
 
+    function _addArtongBalance(address user, uint256 amount) private {
+        artongBalances[user] += amount;
+
+        emit ArtongBalanceUpdated(
+            user,
+            int256(amount),
+            artongBalances[user]
+        );
+    }
+
+    function _subArtongBalance(address user, uint256 amount) private {
+        artongBalances[user] -= amount;
+
+        emit ArtongBalanceUpdated(
+            user,
+            int256(amount),
+            artongBalances[user]
+        );
+    }
+
     function sendArtongBalance(address user) external payable {
-        artongBalances[user] += msg.value;
+        _addArtongBalance(user, msg.value);
     }
 
     /// @notice Offer amounts before deadline(=alive offer amounts)

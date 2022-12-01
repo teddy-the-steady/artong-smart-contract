@@ -94,7 +94,7 @@ describe('ArtongNFT', async function() {
 
       context('when owner burns an existing token', function() {
         before(async function() {
-          await this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri);
+          await this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri, 0);
         });
 
         it('Should fail to burn a token', async function () {
@@ -123,7 +123,7 @@ describe('ArtongNFT', async function() {
           .to.emit(this.artongNft, 'UpdatePolicy')
           .withArgs(0, this.owner.address);
 
-        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri))
+        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri, 0))
           .to.emit(this.artongNft, 'Transfer')
           .withArgs(zeroAddress, this.randomUser1.address, secondTokenId);
       });
@@ -135,7 +135,7 @@ describe('ArtongNFT', async function() {
           .to.emit(this.artongNft, 'UpdatePolicy')
           .withArgs(1, this.owner.address);
 
-        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri))
+        await expect(this.artongNft.mint(this.randomUser1.address, sampleUri, sampleUri, 0))
           // .to.be.revertedWith('Policy only allows lazy minting');
           .to.be.reverted;
       });
@@ -158,10 +158,10 @@ describe('ArtongNFT', async function() {
                 .to.emit(this.artongNft, 'UpdatePolicy')
                 .withArgs(0, this.owner.address);
               
-              await this.artongNft.mint(this.randomUser2.address, sampleUri, sampleUri);
-              await this.artongNft.mint(this.randomUser2.address, sampleUri, sampleUri);
+              await this.artongNft.mint(this.randomUser2.address, sampleUri, sampleUri, 0);
+              await this.artongNft.mint(this.randomUser2.address, sampleUri, sampleUri, 0);
               
-              await expect(this.artongNft.mint(this.marketplace.address, sampleUri, sampleUri))
+              await expect(this.artongNft.mint(this.marketplace.address, sampleUri, sampleUri, 0))
                 // .to.revertedWith("Maximum number of NFTs reached");
                 .to.be.reverted;
             });

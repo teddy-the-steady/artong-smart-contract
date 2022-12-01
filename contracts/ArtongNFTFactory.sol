@@ -62,7 +62,8 @@ contract ArtongNFTFactory is Ownable {
       string memory _name,
       string memory _symbol,
       uint256 _maxAmount,
-      Policy _policy
+      Policy _policy,
+      uint16 _collectionRoyalty
     )
         external
         payable
@@ -79,6 +80,9 @@ contract ArtongNFTFactory is Ownable {
         );
         exists[address(nft)] = true;
         nft.transferOwnership(msg.sender);
+
+        IArtongMarketplace(marketplace).updateCollectionRoyalty(address(nft), _collectionRoyalty);
+
         emit ContractCreated(
             msg.sender,
             address(nft),
