@@ -449,7 +449,7 @@ contract ArtongMarketplace is
     function withdraw() public nonReentrant {
         uint256 moment = _getNow();
         uint256 withdrawableBalance = getWithdrawableBalance(moment, msg.sender);
-        require(withdrawableBalance != 0, "nothing to withdraw");
+        require(withdrawableBalance >= 0.01 ether, "minimum withdrawable value is 0.01 ether");
         require(address(this).balance >= withdrawableBalance, "balance not enough to withdraw");
 
         _subArtongBalance(msg.sender, withdrawableBalance);
