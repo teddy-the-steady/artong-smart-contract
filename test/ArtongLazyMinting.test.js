@@ -90,7 +90,7 @@ describe('ArtongNFT Lazy minting', function() {
         [price.mul(-1), price * platformFee / 10000]
       );
 
-    await expect(await this.marketplace.getArtongBalance(
+    await expect(await this.marketplace.getWithdrawableBalance(
       parseInt(new Date().getTime() / 1000),
       this.minter.address
     )).to.equal(
