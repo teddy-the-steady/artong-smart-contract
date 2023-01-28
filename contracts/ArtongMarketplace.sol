@@ -392,7 +392,7 @@ contract ArtongMarketplace is
         emit OfferAccepted(offer.offerId, _nftAddress, _tokenId, _creator);
 
         delete (offers[_nftAddress][_tokenId][_creator]);
-        _deleteSoldUserOffer(offer);
+        _deleteSoldUserOffer(offer, _creator);
     }
 
     function registerMinter(
@@ -523,8 +523,8 @@ contract ArtongMarketplace is
     }
 
     /// @notice set deadline = 0 for sold user offer
-    function _deleteSoldUserOffer(Offer memory offer) private {
-        Offer[] storage userOffer = userOffers[msg.sender];
+    function _deleteSoldUserOffer(Offer memory offer, address offeror) private {
+        Offer[] storage userOffer = userOffers[offeror];
         for (uint256 i = 0; i < userOffer.length; i++) {
             if (userOffer[i].offerId == offer.offerId) {
                 userOffer[i].deadline = 0;
