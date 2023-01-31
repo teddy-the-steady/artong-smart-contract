@@ -34,11 +34,11 @@ describe('ArtongMarketplace', function() {
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
     this.Nft = await ethers.getContractFactory('ArtongNFT');
 
-    // const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
-    const owner = await ethers.getSigner(ACCOUNT2); // set metamask account 2
-    const feeReceipient = await ethers.getSigner(ACCOUNT1);
-    const randomUser1 = await ethers.getSigner(ACCOUNT3);
-    const randomUser2 = await ethers.getSigner(ACCOUNT4);
+    const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
+    // const owner = await ethers.getSigner(ACCOUNT2); // set metamask account 2
+    // const feeReceipient = await ethers.getSigner(ACCOUNT1);
+    // const randomUser1 = await ethers.getSigner(ACCOUNT3);
+    // const randomUser2 = await ethers.getSigner(ACCOUNT4);
 
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,

@@ -16,6 +16,7 @@ contract ArtongNFTFactory is Ownable {
     );
     event ContractRegistered(address creator, address nft);
     event ContractDisabled(address caller, address nft);
+    event Destoried(address caller);
 
     address public marketplace;
 
@@ -112,5 +113,10 @@ contract ArtongNFTFactory is Ownable {
         require(exists[tokenContractAddress], "NFT contract is not registered");
         exists[tokenContractAddress] = false;
         emit ContractDisabled(msg.sender, tokenContractAddress);
+    }
+
+    function destroy(address apocalypse) public onlyOwner {
+        emit Destoried(msg.sender);
+        selfdestruct(payable(apocalypse));
     }
 }

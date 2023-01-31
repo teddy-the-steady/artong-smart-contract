@@ -28,12 +28,12 @@ describe('ArtongNFT Lazy minting', function() {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
 
-    // const [owner, minter, redeemer, feeReceipient, randomUser, _] = await ethers.getSigners();
-    const owner = await ethers.getSigner(ACCOUNT2);
-    const minter = await ethers.getSigner(ACCOUNT1);
-    const redeemer = await ethers.getSigner(ACCOUNT3);
-    const feeReceipient = await ethers.getSigner(ACCOUNT4);
-    const randomUser = await ethers.getSigner(ACCOUNT5);
+    const [owner, minter, redeemer, feeReceipient, randomUser, _] = await ethers.getSigners();
+    // const owner = await ethers.getSigner(ACCOUNT2);
+    // const minter = await ethers.getSigner(ACCOUNT1);
+    // const redeemer = await ethers.getSigner(ACCOUNT3);
+    // const feeReceipient = await ethers.getSigner(ACCOUNT4);
+    // const randomUser = await ethers.getSigner(ACCOUNT5);
 
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,

@@ -31,11 +31,11 @@ describe('ArtongNFT', async function() {
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
     this.ArtongNFTFactory = await ethers.getContractFactory('ArtongNFTFactory');
 
-    // const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
-    const owner = await ethers.getSigner(ACCOUNT2); // set metamask account 2
-    const feeReceipient = await ethers.getSigner(ACCOUNT1);
-    const randomUser1 = await ethers.getSigner(ACCOUNT3);
-    const randomUser2 = await ethers.getSigner(ACCOUNT4);
+    const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
+    // const owner = await ethers.getSigner(ACCOUNT2); // set metamask account 2
+    // const feeReceipient = await ethers.getSigner(ACCOUNT1);
+    // const randomUser1 = await ethers.getSigner(ACCOUNT3);
+    // const randomUser2 = await ethers.getSigner(ACCOUNT4);
 
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,
@@ -279,6 +279,26 @@ describe('ArtongNFT', async function() {
         )).to.be.reverted;
       });
     });
+
+    context('with proper paramters', function() {
+      it('Should successfully create contract', async function() {
+        await expect(this.factory.createNFTContract(
+            name,
+            symbol,
+            maxAmount,
+            policy
+        ))
+        .to.emit(this.factory, 'ContractCreated')
+        .withArgs(
+          this.owner.address,
+          '0x553BED26A78b94862e53945941e4ad6E4F2497da',
+          name,
+          symbol,
+          maxAmount,
+          policy
+        );
+      });
+    });
   });
 
   describe('minting', function() {
@@ -297,117 +317,44 @@ describe('ArtongNFT', async function() {
       });
     });
   });
-});
 
-describe('ArtongNFT Lazy minting', function() {
-  before(async function () {
-    this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
-    this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
+  describe('self-destruct', function() {
+    context('when non owner tries to desturct', function() {
+      it('Should fail to destruct NFT contract', async function() {
+        await expect(this.artongNft.connect(this.randomUser2).destroy(
+          this.artongNft.address
+        )).to.be.reverted;
 
-    // const [owner, minter, redeemer, feeReceipient, randomUser, _] = await ethers.getSigners();
-    const owner = await ethers.getSigner(ACCOUNT2);
-    const minter = await ethers.getSigner(ACCOUNT1);
-    const redeemer = await ethers.getSigner(ACCOUNT3);
-    const feeReceipient = await ethers.getSigner(ACCOUNT4);
-    const randomUser = await ethers.getSigner(ACCOUNT5);
+        await expect(await this.artongNft.policy()).to.equal(0);
+      });
 
-    const marketplace = await upgrades.deployProxy(
-      this.ArtongMarketplace,
-      [platformFee, feeReceipient.address],
-      { initializer: 'initialize' }
-    );
-    await marketplace.deployed();
-    console.log('marketplace deployed to:', marketplace.address);
+      it('Should fail to destruct factory contract', async function() {
+        await expect(this.factory.connect(this.randomUser2).destroy(
+          this.factory.address
+        )).to.be.reverted;
 
-    const artongNft = await this.ArtongNFT.deploy(
-      name,
-      symbol,
-      marketplace.address,
-      platformFee,
-      feeReceipient.address,
-      maxAmount,
-      policy
-    );
-    await artongNft.deployed();
-    console.log('artongNft deployed to:', artongNft.address);
-
-    const redeemerFactory = this.ArtongNFT.connect(redeemer);
-    const redeemerContract = redeemerFactory.attach(artongNft.address);
-
-    this.owner = owner;
-    this.minter = minter;
-    this.marketplace = marketplace;
-    this.redeemer = redeemer;
-    this.feeReceipient = feeReceipient;
-    this.artongNft = artongNft;
-    this.randomUser = randomUser;
-    this.redeemerContract = redeemerContract;
-  });
-
-  it('Should redeem an NFT from a signed voucher', async function() {
-    const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
-    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
-
-    await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: ethers.utils.parseEther('0.0001') }))
-      .to.emit(this.artongNft, 'Transfer')  // transfer from null address to minter
-      .withArgs(zeroAddress, this.minter.address, firstTokenId)
-      .and.to.emit(this.artongNft, 'Transfer') // transfer from minter to redeemer
-      .withArgs(this.minter.address, this.redeemer.address, firstTokenId);
-  });
-
-  it('Should let minter withdraw earning and feeReceipient should recieve fee', async function() {
-    const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
-    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
-    const price = ethers.utils.parseEther('0.0001');
-
-    await expect(await this.redeemerContract.redeem(this.redeemer.address, voucher, { value: price }))
-      .to.changeEtherBalances(
-        [this.redeemer, this.feeReceipient],
-        [price.mul(-1), price * platformFee / 10000]
-      );
-
-    await expect(await this.marketplace.getWithdrawableBalance(
-      parseInt(new Date().getTime() / 1000),
-      this.minter.address
-    )).to.equal(
-      price * (10000 - platformFee) / 10000 +
-      price * (10000 - platformFee) / 10000
-    );
-  });
-
-  it('Should fail to redeem an NFT voucher thats signed by an unauthorized account', async function() {
-    const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.randomUser });
-    const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
-
-    await expect(this.redeemerContract.redeem(this.redeemer.address, voucher))
-      // .to.be.revertedWith('Signature invalid');
-      .to.be.reverted;
-  });
-
-  context('when payment >= minPrice', function() {
-    it('Should redeem', async function() {
-      const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
-      const minPrice = ethers.utils.parseEther('0.0001');
-      const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri);
-  
-      await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: minPrice }))
-        .to.emit(this.artongNft, 'Transfer')
-        .withArgs(zeroAddress, this.minter.address, thirdTokenId)
-        .and.to.emit(this.artongNft, 'Transfer')
-        .withArgs(this.minter.address, this.redeemer.address, thirdTokenId);
+        await expect(await this.factory.marketplace()).to.equal(
+          this.marketplace.address
+        );
+      });
     });
-  });
 
-  context('when payment < minPrice', function() {
-    it('Should fail to redeem', async function() {
-      const lazyMinter = new LazyMinter({ contract: this.artongNft, signer: this.minter });
-      const minPrice = ethers.utils.parseEther('0.0001');
-      const voucher = await lazyMinter.createVoucher(this.minter.address, sampleUri, sampleUri, minPrice);
-  
-      const payment = minPrice.sub(10000);
-      await expect(this.redeemerContract.redeem(this.redeemer.address, voucher, { value: payment }))
-        // .to.be.revertedWith('Insufficient funds to redeem');
-        .to.be.reverted;
+    context('when owner tries to desturct', function() {
+      it('Should successfully destruct NFT contract', async function() {
+        await expect(this.artongNft.connect(this.owner).destroy(
+          this.artongNft.address
+        ))
+        .to.emit(this.artongNft, 'Destoried')
+        .withArgs(this.owner.address);
+      });
+
+      it('Should successfully destruct factory contract', async function() {
+        await expect(this.factory.connect(this.owner).destroy(
+          this.factory.address
+        ))
+        .to.emit(this.factory, 'Destoried')
+        .withArgs(this.owner.address);
+      });
     });
   });
 });

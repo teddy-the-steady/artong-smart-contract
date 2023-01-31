@@ -40,6 +40,8 @@ contract ArtongNFT is
         string contentUri
     );
 
+    event Destoried(address caller);
+
     Counters.Counter private tokenIdCounter;
     uint256 public immutable maxAmount;
     
@@ -244,5 +246,10 @@ contract ArtongNFT is
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function destroy(address apocalypse) public onlyOwner {
+        emit Destoried(msg.sender);
+        selfdestruct(payable(apocalypse));
     }
 }
