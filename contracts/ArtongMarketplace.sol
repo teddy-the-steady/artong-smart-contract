@@ -393,6 +393,7 @@ contract ArtongMarketplace is
 
         delete (offers[_nftAddress][_tokenId][_creator]);
         _deleteSoldUserOffer(offer, _creator);
+        _subArtongBalance(_creator, offer.price, "offerAccepted");
     }
 
     function registerMinter(
@@ -452,7 +453,7 @@ contract ArtongMarketplace is
         require(withdrawableBalance >= 0.01 ether, "minimum withdrawable value is 0.01 ether");
         require(address(this).balance >= withdrawableBalance, "balance not enough to withdraw");
 
-        _subArtongBalance(msg.sender, withdrawableBalance);
+        _subArtongBalance(msg.sender, withdrawableBalance, "withdraw");
 
         _deleteOldUserOffers(moment);
 
@@ -485,14 +486,14 @@ contract ArtongMarketplace is
         );
     }
 
-    function _subArtongBalance(address user, uint256 amount) private {
+    function _subArtongBalance(address user, uint256 amount, string memory reason) private {
         artongBalances[user] -= amount;
 
         emit ArtongBalanceUpdated(
             user,
             int256(amount),
             artongBalances[user],
-            "withdraw"
+            reason
         );
     }
 
