@@ -131,23 +131,27 @@ describe('ArtongMarketplace', function() {
   });
 
   describe('Royalty', function() {
-    context('when royalty > 10000', function() {
-      it('Should fail to update tokenRoyalty', async function() {
-        await expect(this.marketplace.connect(this.randomUser1).updateTokenRoyalty(30000))
-          // .to.be.revertedWith('invalid royalty');
-          .to.be.reverted;
+    context('when owner, minter tries to set Royalty', function() {
+      it('Should be able to update collectionRoyalty', async function() {
+        await expect(await this.marketplace.connect(this.owner).updateCollectionRoyalty(
+          this.nft.address,
+          0
+        )).to.emit(this.marketplace, 'UpdateCollectionRoyalty')
+          .withArgs(this.owner.address, this.nft.address, 0);
       });
 
-      it('Should fail to update collectionRoyalty', async function() {
-        await expect(this.marketplace.connect(this.randomUser1).updateCollectionRoyalty(
+      it('Should be able to update tokenRoyalty', async function() {
+        await expect(await this.marketplace.connect(this.randomUser1).updateTokenRoyalty(
+          this.randomUser1.address,
           this.nft.address,
-          10010
-        // )).to.be.revertedWith('invalid royalty');
-        )).to.be.reverted;
+          firstTokenId,
+          0
+        )).to.emit(this.marketplace, 'UpdateTokenRoyalty')
+          .withArgs(this.randomUser1.address, this.nft.address, firstTokenId, 0);
       });
     });
 
-    context('when none owner tries to set collectionRoyalty', function() {
+    context('when non-owner, non-minter tries to set Royalty', function() {
       it('Should fail to update collectionRoyalty', async function() {
         await expect(this.marketplace.connect(this.randomUser1).updateCollectionRoyalty(
           this.nft.address,
@@ -155,24 +159,56 @@ describe('ArtongMarketplace', function() {
         // )).to.be.revertedWith('user not approved for this item');
         )).to.be.reverted;
       });
+
+      it('Should fail to update tokenRoyalty', async function() {
+        await expect(this.marketplace.connect(this.randomUser2).updateTokenRoyalty(
+          this.randomUser1.address,
+          this.nft.address,
+          firstTokenId,
+          tokenRoyalty
+        // )).to.be.revertedWith('user not approved for this item');
+        )).to.be.reverted;
+      });
     });
 
-    it('Should be able to update collectionRoyalty', async function() {
-      await expect(this.marketplace.connect(this.owner).updateCollectionRoyalty(
-        this.nft.address,
-        0
-      )).to.emit(this.marketplace, 'UpdateCollectionRoyalty')
-        .withArgs(this.owner.address, this.nft.address, 0);
+    context('when royalty > 10000', function() {
+      it('Should fail to update tokenRoyalty', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).updateTokenRoyalty(
+          this.randomUser1.address,
+          this.nft.address,
+          firstTokenId,
+          10010
+        // )).to.be.revertedWith('invalid royalty');
+        )).to.be.reverted;
+      });
+
+      it('Should fail to update collectionRoyalty', async function() {
+        await expect(this.marketplace.connect(this.owner).updateCollectionRoyalty(
+          this.nft.address,
+          10010
+        // )).to.be.revertedWith('invalid royalty');
+        )).to.be.reverted;
+      });
     });
 
-    it('Should be able to update tokenRoyalty', async function() {
-      await expect(this.marketplace.connect(this.randomUser2).updateTokenRoyalty(
-        this.randomUser2.address,
-        this.nft.address,
-        10,
-        tokenRoyalty
-      )).to.emit(this.marketplace, 'UpdateTokenRoyalty')
-        .withArgs(this.randomUser2.address, this.nft.address, 10, tokenRoyalty);
+    context('when royalty < 0', function() {
+      it('Should fail to update tokenRoyalty', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).updateTokenRoyalty(
+          this.randomUser1.address,
+          this.nft.address,
+          firstTokenId,
+          -100
+        // )).to.be.revertedWith('invalid royalty');
+        )).to.be.reverted;
+      });
+
+      it('Should fail to update collectionRoyalty', async function() {
+        await expect(this.marketplace.connect(this.randomUser1).updateCollectionRoyalty(
+          this.nft.address,
+          -100
+        // )).to.be.revertedWith('invalid royalty');
+        )).to.be.reverted;
+      });
     });
   });
 
@@ -339,12 +375,12 @@ describe('ArtongMarketplace', function() {
 
         context('when tokenRoyalty, collectionRoyalty exsists', function() {
           before(async function() {
-            await this.marketplace.updateCollectionRoyalty(this.nft.address, collectionRoyalty);
+            await this.marketplace.connect(this.owner).updateCollectionRoyalty(this.nft.address, collectionRoyalty);
             await this.marketplace.connect(this.randomUser1).updateTokenRoyalty(
               this.randomUser1.address,
               this.nft.address,
-              tokenRoyalty,
-              firstTokenId
+              firstTokenId,
+              tokenRoyalty
             );
 
             await this.marketplace.connect(this.randomUser2).listItem(
