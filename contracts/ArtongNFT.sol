@@ -37,10 +37,18 @@ contract ArtongNFT is
         address minter,
         uint256 tokenId,
         string tokenUri,
-        string contentUri
+        string contentUri,
+        uint16 tokenRoyalty
     );
 
     event Destoried(address caller);
+
+    event Redeemed(
+        address creator,
+        address redeemer,
+        uint256 tokenId,
+        uint256 price
+    );
 
     Counters.Counter private tokenIdCounter;
     uint256 public immutable maxAmount;
@@ -53,6 +61,7 @@ contract ArtongNFT is
         uint256 minPrice;
         string tokenUri;
         string contentUri;
+        uint16 royalty;
         bytes signature;
     }
 
@@ -119,7 +128,8 @@ contract ArtongNFT is
         (bool success,) = feeReceipient.call{value : feeAmount}("");
         require(success, "Transfer failed");
 
-        uint256 newTokenId = _doMint(voucher.creator, voucher.tokenUri, voucher.contentUri, 0);
+        uint256 newTokenId = _doMint(voucher.creator, voucher.tokenUri, voucher.contentUri, voucher.royalty);
+        emit Redeemed(voucher.creator, redeemer, newTokenId, voucher.minPrice);
         _transfer(voucher.creator, redeemer, newTokenId);
 
         IArtongMarketplace(marketplace).sendArtongBalance{value: msg.value - feeAmount}(signer);
@@ -199,7 +209,7 @@ contract ArtongNFT is
         _mint(_to, newTokenId);
         _setTokenURI(newTokenId, _tokenUri);
 
-        emit TokenMinted(_to, newTokenId, _tokenUri, _contentUri);
+        emit TokenMinted(_to, newTokenId, _tokenUri, _contentUri, _tokenRoyalty);
 
         return newTokenId;
     }
@@ -224,11 +234,12 @@ contract ArtongNFT is
     /// @param voucher An NFTVoucher to hash.
     function _hash(NFTVoucher calldata voucher) internal view returns (bytes32) {
         return _hashTypedDataV4(keccak256(abi.encode(
-            keccak256("NFTVoucher(address creator,uint256 minPrice,string tokenUri,string contentUri)"),
+            keccak256("NFTVoucher(address creator,uint256 minPrice,string tokenUri,string contentUri,uint16 royalty)"),
             voucher.creator,
             voucher.minPrice,
             keccak256(bytes(voucher.tokenUri)),
-            keccak256(bytes(voucher.contentUri))
+            keccak256(bytes(voucher.contentUri)),
+            voucher.royalty
         )));
     }
 

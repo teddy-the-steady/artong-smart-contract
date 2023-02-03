@@ -291,7 +291,7 @@ describe('ArtongNFT', async function() {
         .to.emit(this.factory, 'ContractCreated')
         .withArgs(
           this.owner.address,
-          '0x553BED26A78b94862e53945941e4ad6E4F2497da',
+          '0x553BED26A78b94862e53945941e4ad6E4F2497da', // this shouldn't be constant..
           name,
           symbol,
           maxAmount,

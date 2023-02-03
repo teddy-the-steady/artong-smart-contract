@@ -12,6 +12,7 @@ const SIGNING_DOMAIN_VERSION = "1"
  * @property {ethers.BigNumber | number} minPrice the minimum price (in wei) that the creator will accept to redeem this NFT
  * @property {string} tokenUri the metadata URI to associate with this NFT
  * @property {string} contentUri the content URI to associate with this NFT
+ * @property {number} royalty royalty for the creator of this NFT (ex. 525 = 5.25%)
  * @property {ethers.BytesLike} signature an EIP-712 signature of all fields in the NFTVoucher, apart from signature itself.
  */
 
@@ -39,11 +40,12 @@ class LazyMinter {
    * @param {string} tokenUri the metadata URI to associate with this NFT
    * @param {string} contentUri the content URI to associate with this NFT
    * @param {ethers.BigNumber | number} minPrice the minimum price (in wei) that the creator will accept to redeem this NFT. defaults to zero
+   * @param {number} royalty royalty for the creator of this NFT (ex. 525 = 5.25%)
    * 
    * @returns {NFTVoucher}
    */
-  async createVoucher(creator, tokenUri, contentUri, minPrice = 0) {
-    const voucher = { creator, tokenUri, contentUri, minPrice }
+  async createVoucher(creator, tokenUri, contentUri, minPrice = 0, royalty = 0) {
+    const voucher = { creator, tokenUri, contentUri, minPrice, royalty }
     const domain = await this._signingDomain()
     const types = {
       NFTVoucher: [
@@ -51,6 +53,7 @@ class LazyMinter {
         {name: "minPrice", type: "uint256"},
         {name: "tokenUri", type: "string"},
         {name: "contentUri", type: "string"}, 
+        {name: "royalty", type: "uint16"},
       ]
     }
     const signature = await this.signer._signTypedData(domain, types, voucher)
