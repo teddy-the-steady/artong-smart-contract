@@ -406,7 +406,7 @@ contract ArtongMarketplace is
     }
 
     function updateTokenRoyalty(address _minter, address _nftAddress, uint256 _tokenId, uint16 _royalty) external {
-        require(_royalty >= 0 && _royalty <= 10000, "invalid royalty");
+        require(_royalty >= 0 && _royalty <= 5000, "token royalty is limited to 50%");
         require(msg.sender == address(_nftAddress) || msg.sender == minters[_nftAddress][_tokenId], "not approved for this item");
         tokenRoyalties[_minter][_nftAddress][_tokenId] = _royalty;
 
@@ -417,7 +417,7 @@ contract ArtongMarketplace is
         address _nftAddress,
         uint16 _royalty
     ) external {
-        require(_royalty >= 0 && _royalty <= 10000, "invalid royalty");
+        require(_royalty >= 0 && _royalty <= 3000, "project royalty is limited up to 30%");
         require(_isNFTValid(_nftAddress), "invalid nft address");
 
         IArtongNFT nft = IArtongNFT(_nftAddress);
