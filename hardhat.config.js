@@ -1,6 +1,7 @@
 require('dotenv').config();
 require('@nomiclabs/hardhat-ethers');
 require('@openzeppelin/hardhat-upgrades');
+require("hardhat-gas-reporter");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -21,27 +22,21 @@ module.exports = {
       allowUnlimitedContractSize: true,
       chainId: 1337
     },
-    goerli: {
-      url: 'https://goerli.infura.io/v3/c60789555fff407eabc1c2bfa1330684',
-      accounts: [
-        process.env.PRIVATE_KEY_2,
-        process.env.PRIVATE_KEY_1,
-        process.env.PRIVATE_KEY_3,
-        process.env.PRIVATE_KEY_4,
-        process.env.PRIVATE_KEY_5,
-      ],
-      gas: 2100000,
-      gasPrice: 8000000000,
-    }
-    // mainnet: {
-    //   url: `https://rpcapi.fantom.network`,
-    //   chainId: 250,
-    //   accounts: [`0x${PRIVATE_KEY}`]
+    // goerli: {
+    //   url: 'https://goerli.infura.io/v3/c60789555fff407eabc1c2bfa1330684',
+    //   accounts: [
+    //     process.env.PRIVATE_KEY_2,
+    //     process.env.PRIVATE_KEY_1,
+    //     process.env.PRIVATE_KEY_3,
+    //     process.env.PRIVATE_KEY_4,
+    //     process.env.PRIVATE_KEY_5,
+    //   ],
+    //   gas: 2100000,
+    //   gasPrice: 8000000000,
     // },
-    // testnet: {
-    //   url: `https://rpcapi-tracing.testnet.fantom.network`,
-    //   chainId: 4002,
-    //   accounts: [`0x${PRIVATE_KEY}`]
-    // },
+    mainnet: {
+      url: 'https://mainnet.infura.io/v3/ae3e3f39ab144c7b9a0ef19d3ff80aa9',
+      accounts: [process.env.MAINNET_PRIVATE_KEY]
+    },
   },
 };
