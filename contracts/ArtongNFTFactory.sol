@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 import "./ArtongNFT.sol";
 import "./Enums.sol";
 
@@ -16,7 +17,6 @@ contract ArtongNFTFactory is Ownable {
     );
     event ContractRegistered(address creator, address nft);
     event ContractDisabled(address caller, address nft);
-    event Destoried(address caller);
 
     address public marketplace;
 
@@ -24,21 +24,20 @@ contract ArtongNFTFactory is Ownable {
 
     address payable public feeRecipient;
 
-    /// @notice NFT Address => Bool
-    mapping(address => bool) public exists;
+    address[] public clonedContracts;
 
-    Policy public policy;
-
-    uint256 public maxAmount;
+    address private immutable artongNFTBeacon;
 
     constructor(
         address _marketplace,
         address payable _feeRecipient,
-        uint16 _platformFee
+        uint16 _platformFee,
+        address _beacon
     ) {
         marketplace = _marketplace;
         feeRecipient = _feeRecipient;
         platformFee = _platformFee;
+        artongNFTBeacon = address(_beacon);
     }
 
     function updateMarketplace(address _marketplace) external onlyOwner {
@@ -69,54 +68,35 @@ contract ArtongNFTFactory is Ownable {
         payable
         returns (address)
     {
-        ArtongNFT nft = new ArtongNFT(
-            _name,
-            _symbol,
-            marketplace,
-            platformFee,
-            feeRecipient,
-            _maxAmount,
-            _policy
+        BeaconProxy proxy = new BeaconProxy(
+            artongNFTBeacon,
+            abi.encodeWithSelector(
+                ArtongNFT(address(0)).initialize.selector,
+                _name,
+                _symbol,
+                marketplace,
+                platformFee,
+                feeRecipient,
+                _maxAmount,
+                _policy,
+                msg.sender
+            )
         );
-        exists[address(nft)] = true;
-        nft.transferOwnership(msg.sender);
+
+        clonedContracts.push(address(proxy));
 
         emit ContractCreated(
             msg.sender,
-            address(nft),
+            address(proxy),
             _name,
             _symbol,
             _maxAmount,
             _policy
         );
-        return address(nft);
+        return address(proxy);
     }
 
-    /// @notice Method for registering existing ArtongNFT contract
-    /// @param  tokenContractAddress Address of NFT contract
-    function registerTokenContract(address tokenContractAddress)
-        external
-        onlyOwner
-    {
-        require(!exists[tokenContractAddress], "NFT contract already registered");
-        require(IERC165(tokenContractAddress).supportsInterface(type(IERC721).interfaceId), "Not an ERC721 contract");
-        exists[tokenContractAddress] = true;
-        emit ContractRegistered(msg.sender, tokenContractAddress);
-    }
-
-    /// @notice Method for disabling existing ArtongNFT contract
-    /// @param  tokenContractAddress Address of NFT contract
-    function disableTokenContract(address tokenContractAddress)
-        external
-        onlyOwner
-    {
-        require(exists[tokenContractAddress], "NFT contract is not registered");
-        exists[tokenContractAddress] = false;
-        emit ContractDisabled(msg.sender, tokenContractAddress);
-    }
-
-    function destroy(address apocalypse) public onlyOwner {
-        emit Destoried(msg.sender);
-        selfdestruct(payable(apocalypse));
+    function getClonedContracts() external view returns (address[] memory) {
+        return clonedContracts;
     }
 }

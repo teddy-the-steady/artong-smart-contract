@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "./Enums.sol";
 
 interface IArtongMarketplace {
@@ -19,12 +19,13 @@ interface IArtongMarketplace {
 }
 
 contract ArtongNFT is
-    ERC721URIStorage,
-    EIP712,
-    Pausable,
-    ERC721Burnable,
-    Ownable,
-    ERC721Enumerable
+    ERC721Upgradeable,
+    ERC721URIStorageUpgradeable,
+    ERC721EnumerableUpgradeable,
+    ERC721BurnableUpgradeable,
+    PausableUpgradeable,
+    OwnableUpgradeable,
+    EIP712Upgradeable
 {
     using Counters for Counters.Counter;
 
@@ -41,8 +42,6 @@ contract ArtongNFT is
         uint16 tokenRoyalty
     );
 
-    event Destoried(address caller);
-
     event Redeemed(
         address creator,
         address redeemer,
@@ -51,7 +50,7 @@ contract ArtongNFT is
     );
 
     Counters.Counter private tokenIdCounter;
-    uint256 public immutable maxAmount;
+    uint256 public maxAmount;
     
     string private constant SIGNING_DOMAIN = "ArtongNFT-Voucher";
     string private constant SIGNATURE_VERSION = "1";
@@ -74,25 +73,30 @@ contract ArtongNFT is
     address payable public feeReceipient;
 
     modifier checkMaxAmount() {
-		require(maxAmount > tokenIdCounter.current(), "Maximum number of NFTs reached");
+        if (maxAmount > 0) {
+            require(maxAmount > tokenIdCounter.current(), "Maximum number of NFTs reached");
+        }
 		_;
 	}
 
-    constructor(
+    function initialize(
         string memory _name,
         string memory _symbol,
         address _marketplace,
         uint16 _platformFee,
         address payable _feeReceipient,
         uint256 _maxAmount,
-        Policy _policy
-    )
-    ERC721(_name, _symbol)
-    EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION)
-    {
+        Policy _policy,
+        address newOwner
+    ) public initializer {
         require(bytes(_name).length > 0, "Name is required");
         require(bytes(_symbol).length > 0, "Symbol is required");
-        require(_maxAmount > 0, "MaxAmount has to be positive number");
+
+        __ERC721_init(_name, _symbol);
+        __EIP712_init(SIGNING_DOMAIN, SIGNATURE_VERSION);
+        __Ownable_init();
+        transferOwnership(newOwner);
+
         marketplace = _marketplace;
         platformFee = _platformFee;
         feeReceipient = _feeReceipient;
@@ -180,7 +184,7 @@ contract ArtongNFT is
     function tokenURI(uint256 tokenId)
         public
         view
-        override(ERC721, ERC721URIStorage)
+        override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
         returns (string memory)
     {
         return super.tokenURI(tokenId);
@@ -189,7 +193,7 @@ contract ArtongNFT is
     /// @notice Override _isApprovedOrOwner to whitelist Artong contracts to enable gas-less listings.
     function _isApprovedOrOwner(address spender, uint256 tokenId) override internal view returns (bool) {
         require(_exists(tokenId), "ERC721: operator query for nonexistent token");
-        address owner = ERC721.ownerOf(tokenId);
+        address owner = ERC721Upgradeable.ownerOf(tokenId);
         if (isApprovedForAll(owner, spender)) return true;
         return super._isApprovedOrOwner(spender, tokenId);
     }
@@ -218,7 +222,7 @@ contract ArtongNFT is
         return msg.value * platformFee / 10000;
     }
 
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
+    function _burn(uint256 tokenId) internal override(ERC721Upgradeable, ERC721URIStorageUpgradeable) {
         super._burn(tokenId);
     }
 
@@ -243,24 +247,19 @@ contract ArtongNFT is
         )));
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
         internal
-        override(ERC721, ERC721Enumerable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
     {
-        super._beforeTokenTransfer(from, to, tokenId);
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Enumerable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
-    }
-
-    function destroy(address apocalypse) public onlyOwner {
-        emit Destoried(msg.sender);
-        selfdestruct(payable(apocalypse));
     }
 }
