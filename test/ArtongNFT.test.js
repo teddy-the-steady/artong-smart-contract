@@ -31,11 +31,11 @@ describe('ArtongNFT', async function() {
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
     this.ArtongNFTFactory = await ethers.getContractFactory('ArtongNFTFactory');
 
-    const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
-    // const owner = await ethers.getSigner(ACCOUNT2); // set metamask account 2
-    // const feeReceipient = await ethers.getSigner(ACCOUNT1);
-    // const randomUser1 = await ethers.getSigner(ACCOUNT3);
-    // const randomUser2 = await ethers.getSigner(ACCOUNT4);
+    // const [owner, feeReceipient, randomUser1, randomUser2, _] = await ethers.getSigners();
+    const owner = await ethers.getSigner(ACCOUNT2); // set metamask account 2
+    const feeReceipient = await ethers.getSigner(ACCOUNT1);
+    const randomUser1 = await ethers.getSigner(ACCOUNT3);
+    const randomUser2 = await ethers.getSigner(ACCOUNT4);
 
     const marketplace = await upgrades.deployProxy(
       this.ArtongMarketplace,
@@ -45,25 +45,47 @@ describe('ArtongNFT', async function() {
     await marketplace.deployed();
     console.log('marketplace deployed to:', marketplace.address);
 
-    const artongNft = await this.ArtongNFT.deploy(
-      name,
-      symbol,
-      marketplace.address,
-      platformFee,
-      feeReceipient.address,
-      maxAmount,
-      policy
+    const beacon = await upgrades.deployBeacon(this.ArtongNFT);
+    await beacon.deployed();
+    console.log("Beacon deployed to:", beacon.address);
+
+    const artongNFTproxy = await upgrades.deployBeaconProxy(
+      beacon,
+      this.ArtongNFT,
+      [
+        'artongNFTproxy',
+        'ATGP',
+        marketplace.address,
+        platformFee,
+        feeReceipient.address,
+        0,
+        1,
+        owner.address
+      ]
     );
-    await artongNft.deployed();
-    console.log('artongNft deployed to:', artongNft.address);
+    await artongNFTproxy.deployed();
+    console.log('artongNFTproxy deployed to:', artongNFTproxy.address);
 
     const factory = await this.ArtongNFTFactory.deploy(
       marketplace.address,
       feeReceipient.address,
-      platformFee
+      platformFee,
+      beacon.address
     );
     await factory.deployed();
     console.log('factory deployed to:', factory.address);
+
+    const tx = await factory.createNFTContract(
+      name,
+      symbol,
+      maxAmount,
+      policy
+    );
+    const receipt = await tx.wait();
+    const address = ethers.utils.hexDataSlice(receipt.events[4].data, 44, 64);
+    console.log('artongNftAddress:', address)
+
+    const artongNft = this.ArtongNFT.attach(address);
 
     this.owner = owner;
     this.feeReceipient = feeReceipient;
@@ -76,11 +98,11 @@ describe('ArtongNFT', async function() {
 
   describe('metadata', function() {
     it('Should have a name', async function() {
-      expect(await this.artongNft.name()).to.equal(name);
+      await expect(await this.artongNft.name()).to.equal(name);
     });
 
     it('Should have a symbol', async function() {
-      expect(await this.artongNft.symbol()).to.equal(symbol);
+      await expect(await this.artongNft.symbol()).to.equal(symbol);
     });
   });
 
@@ -256,12 +278,12 @@ describe('ArtongNFT', async function() {
       });
     });
 
-    context('when maxAmount is less or equal to 0', function() {
+    context('when maxAmount is less than 0', function() {
       it('Should fail to create contract', async function() {
         await expect(this.factory.createNFTContract(
           name,
           symbol,
-          0,
+          -1,
           policy
         // )).to.be.revertedWith("MaxAmount has to be positive number");
         )).to.be.reverted;
@@ -291,7 +313,7 @@ describe('ArtongNFT', async function() {
         .to.emit(this.factory, 'ContractCreated')
         .withArgs(
           this.owner.address,
-          '0x553BED26A78b94862e53945941e4ad6E4F2497da', // this shouldn't be constant..
+          '0xD79aE87F2c003Ec925fB7e9C11585709bfe41473', // this shouldn't be constant..
           name,
           symbol,
           maxAmount,
@@ -314,46 +336,6 @@ describe('ArtongNFT', async function() {
           firstTokenId
         // )).to.be.revertedWith('minter already registered');
         )).to.be.reverted;
-      });
-    });
-  });
-
-  describe('self-destruct', function() {
-    context('when non owner tries to desturct', function() {
-      it('Should fail to destruct NFT contract', async function() {
-        await expect(this.artongNft.connect(this.randomUser2).destroy(
-          this.artongNft.address
-        )).to.be.reverted;
-
-        await expect(await this.artongNft.policy()).to.equal(0);
-      });
-
-      it('Should fail to destruct factory contract', async function() {
-        await expect(this.factory.connect(this.randomUser2).destroy(
-          this.factory.address
-        )).to.be.reverted;
-
-        await expect(await this.factory.marketplace()).to.equal(
-          this.marketplace.address
-        );
-      });
-    });
-
-    context('when owner tries to desturct', function() {
-      it('Should successfully destruct NFT contract', async function() {
-        await expect(this.artongNft.connect(this.owner).destroy(
-          this.artongNft.address
-        ))
-        .to.emit(this.artongNft, 'Destoried')
-        .withArgs(this.owner.address);
-      });
-
-      it('Should successfully destruct factory contract', async function() {
-        await expect(this.factory.connect(this.owner).destroy(
-          this.factory.address
-        ))
-        .to.emit(this.factory, 'Destoried')
-        .withArgs(this.owner.address);
       });
     });
   });

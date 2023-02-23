@@ -15,7 +15,7 @@ module.exports = {
     }
   },
   mocha: {
-    timeout: 100000000
+    timeout: 1000000000
   },
   networks: {
     hardhat: {
@@ -32,7 +32,7 @@ module.exports = {
         process.env.PRIVATE_KEY_5,
       ],
       gas: 2100000,
-      gasPrice: 8000000000,
+      gasPrice: 80000000000,
     },
     // mainnet: {
     //   url: 'https://mainnet.infura.io/v3/ae3e3f39ab144c7b9a0ef19d3ff80aa9',

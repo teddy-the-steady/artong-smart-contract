@@ -28,6 +28,7 @@ describe('ArtongNFT Lazy minting', function() {
   before(async function () {
     this.ArtongNFT = await ethers.getContractFactory('ArtongNFT');
     this.ArtongMarketplace = await ethers.getContractFactory('ArtongMarketplace');
+    this.ArtongNFTFactory = await ethers.getContractFactory('ArtongNFTFactory');
 
     const [owner, minter, redeemer, feeReceipient, randomUser, _] = await ethers.getSigners();
     // const owner = await ethers.getSigner(ACCOUNT2);
@@ -44,20 +45,47 @@ describe('ArtongNFT Lazy minting', function() {
     await marketplace.deployed();
     console.log('marketplace deployed to:', marketplace.address);
 
-    const artongNft = await this.ArtongNFT.deploy(
+    const beacon = await upgrades.deployBeacon(this.ArtongNFT);
+    await beacon.deployed();
+    console.log("Beacon deployed to:", beacon.address);
+
+    const artongNFTproxy = await upgrades.deployBeaconProxy(
+      beacon,
+      this.ArtongNFT,
+      [
+        'artongNFTproxy',
+        'ATGP',
+        marketplace.address,
+        platformFee,
+        feeReceipient.address,
+        0,
+        1,
+        owner.address
+      ]
+    );
+    await artongNFTproxy.deployed();
+    console.log('artongNFTproxy deployed to:', artongNFTproxy.address);
+
+    const factory = await this.ArtongNFTFactory.deploy(
+      marketplace.address,
+      feeReceipient.address,
+      platformFee,
+      beacon.address
+    );
+    await factory.deployed();
+    console.log('factory deployed to:', factory.address);
+
+    const tx = await factory.createNFTContract(
       name,
       symbol,
-      marketplace.address,
-      platformFee,
-      feeReceipient.address,
       maxAmount,
       policy
     );
-    await artongNft.deployed();
-    console.log('artongNft deployed to:', artongNft.address);
+    const receipt = await tx.wait();
+    const address = ethers.utils.hexDataSlice(receipt.events[4].data, 44, 64);
 
-    const redeemerFactory = this.ArtongNFT.connect(redeemer);
-    const redeemerContract = redeemerFactory.attach(artongNft.address);
+    const artongNft = this.ArtongNFT.attach(address);
+    const redeemerContract = this.ArtongNFT.connect(redeemer).attach(address);
 
     this.owner = owner;
     this.minter = minter;
