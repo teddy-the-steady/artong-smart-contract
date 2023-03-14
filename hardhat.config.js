@@ -1,6 +1,7 @@
 require('dotenv').config();
 require('@nomiclabs/hardhat-ethers');
 require('@openzeppelin/hardhat-upgrades');
+require('@nomiclabs/hardhat-etherscan');
 require("hardhat-gas-reporter");
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -39,4 +40,7 @@ module.exports = {
       accounts: [process.env.MAINNET_PRIVATE_KEY]
     },
   },
+  etherscan: {
+    apiKey: "4YV6C97YRA8G12NBTQZXMXYUZVWIJI4JM8"
+  }
 };
